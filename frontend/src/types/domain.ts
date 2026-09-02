@@ -142,6 +142,15 @@ export type OrderStatus =
   | "FULFILLED"
   | "CANCELLED";
 
+export type OrderItemSnapshot = {
+  product_id: string;
+  sku: string;
+  name: string;
+  quantity: number;
+  unit_price_paise: number;
+  total_paise: number;
+};
+
 export type Order = {
   id: string;
   merchant_id: string;
@@ -150,6 +159,7 @@ export type Order = {
   customer_email: string;
   customer_phone: string;
   shipping_address: ShippingAddress;
+  items?: OrderItemSnapshot[];
   amount_paise: number;
   currency: string;
   status: OrderStatus;
@@ -159,6 +169,41 @@ export type Order = {
   confirmed_at?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type CheckoutInitiateRequest = {
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  shipping_address: ShippingAddress;
+  approved_total_paise: number;
+};
+
+export type CheckoutInitiateResponse = {
+  merchant_order_id: string;
+  razorpay_order_id: string;
+  razorpay_key_id: string;
+  amount_paise: number;
+  currency: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+};
+
+export type PaymentVerifyRequest = {
+  merchant_order_id: string;
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+export type PaymentVerifyResponse = {
+  order_id: string;
+  status: OrderStatus;
+  amount_paise: number;
+  currency: string;
+  paid_at?: string;
+  confirmed_at?: string;
 };
 
 export type PaymentAttempt = {

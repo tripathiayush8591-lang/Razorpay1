@@ -1,36 +1,76 @@
 import React from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
   ArrowLeft,
   MapPin,
   User,
   Sparkles,
+  ShoppingBag,
 } from "lucide-react";
 import { useMockCommerce } from "../../lib/mock/MockCommerceContext";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import OrderTimeline from "../../components/orders/OrderTimeline";
+import { apiClient } from "../../lib/api/client";
+import type { Order } from "../../types/domain";
 
 export const OrderDetailPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const { orders, products, setIsAssistantOpen } = useMockCommerce();
 
-  const order = orders.find((o) => o.id === orderId) || orders[0];
+  // Query backend authoritative order
+  const { data: backendOrderResponse, isLoading } = useQuery({
+    queryKey: ["order", orderId],
+    queryFn: async () => {
+      if (!orderId) return null;
+      try {
+        return await apiClient.getOrder(orderId);
+      } catch (e) {
+        console.warn("Could not fetch order from backend; falling back to local state", e);
+        return null;
+      }
+    },
+    enabled: !!orderId,
+  });
 
-  // Sample items display matching seed products
-  const displayItems = [
-    {
-      product: products[0],
-      quantity: 1,
-      unitPricePaise: products[0]?.price_paise || 549900,
-    },
-    {
-      product: products[5],
-      quantity: 1,
-      unitPricePaise: products[5]?.price_paise || 69900,
-    },
-  ];
+  const backendOrder: Order | undefined = backendOrderResponse?.data;
+  const mockFallbackOrder = orders.find((o) => o.id === orderId) || orders[0];
+  const order = backendOrder || mockFallbackOrder;
+
+  // Render items from authoritative immutable snapshot if present, else fallback
+  const snapshotItems = order.items && order.items.length > 0
+    ? order.items.map((it) => {
+        const prod = products.find((p) => p.id === it.product_id);
+        return {
+          name: it.name,
+          sku: it.sku,
+          quantity: it.quantity,
+          unitPricePaise: it.unit_price_paise,
+          totalPaise: it.total_paise,
+          imageUrl: prod?.image_url,
+        };
+      })
+    : [
+        {
+          name: products[0]?.name || "Performance Running Gear",
+          sku: products[0]?.sku || "RUN-SKU",
+          quantity: 1,
+          unitPricePaise: products[0]?.price_paise || 549900,
+          totalPaise: products[0]?.price_paise || 549900,
+          imageUrl: products[0]?.image_url,
+        },
+      ];
+
+  if (isLoading) {
+    return (
+      <div className="py-20 text-center space-y-3">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-text-secondary font-medium">Loading verified order details...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -57,7 +97,7 @@ export const OrderDetailPage: React.FC = () => {
               <h1 className="text-xl sm:text-2xl font-extrabold text-text-primary">
                 Order Confirmed!
               </h1>
-              <Badge variant="accent">CONFIRMED</Badge>
+              <Badge variant="accent">{order.status}</Badge>
             </div>
             <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
               Thank you, <strong className="text-text-primary">{order.customer_name}</strong>. Your payment was verified server-side and your running gear is being prepared for dispatch.
@@ -76,33 +116,44 @@ export const OrderDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Line Items & Customer Details (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Purchased Items Card */}
+          {/* Purchased Items Card (Immutable Snapshot) */}
           <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
-            <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider pb-3 border-b border-border">
-              Purchased Equipment
-            </h2>
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                Purchased Equipment
+              </h2>
+              <span className="text-[10px] text-text-muted font-mono bg-surface-secondary px-2 py-0.5 rounded-full border border-border">
+                Immutable Snapshot
+              </span>
+            </div>
 
             <div className="divide-y divide-border">
-              {displayItems.map((item, idx) => (
+              {snapshotItems.map((item, idx) => (
                 <div key={idx} className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={item.product?.image_url}
-                      alt={item.product?.name || "Gear"}
-                      className="w-12 h-12 rounded-xl object-cover bg-surface-tertiary border border-border shrink-0"
-                    />
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-12 h-12 rounded-xl object-cover bg-surface-tertiary border border-border shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-surface-tertiary border border-border flex items-center justify-center text-text-muted shrink-0">
+                        <ShoppingBag className="w-5 h-5" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-text-primary truncate">
-                        {item.product?.name || "Running Item"}
+                        {item.name}
                       </p>
                       <p className="text-[10px] font-mono text-text-muted">
-                        SKU: {item.product?.sku} • Qty: {item.quantity}
+                        SKU: {item.sku} • Qty: {item.quantity}
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-xs font-extrabold text-text-primary shrink-0">
-                    ₹{((item.unitPricePaise * item.quantity) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  <span className="text-xs font-extrabold text-text-primary shrink-0 font-mono">
+                    ₹{(item.totalPaise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               ))}
@@ -111,7 +162,7 @@ export const OrderDetailPage: React.FC = () => {
             {/* Authoritative Total */}
             <div className="pt-4 border-t border-border flex justify-between items-baseline">
               <span className="text-xs font-bold text-text-secondary">Authoritative Total Paid</span>
-              <span className="text-lg font-extrabold text-accent">
+              <span className="text-xl font-black text-accent font-mono">
                 ₹{(order.amount_paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             </div>

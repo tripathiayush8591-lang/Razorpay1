@@ -15,6 +15,7 @@ class MerchantOrder(Base):
     customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
     customer_phone: Mapped[str] = mapped_column(String(50), nullable=False)
     shipping_address_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    items_snapshot_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     amount_paise: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="INR", nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="PENDING_PAYMENT", nullable=False)

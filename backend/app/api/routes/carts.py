@@ -13,6 +13,7 @@ from app.schemas.cart import (
     CartResponse,
 )
 from app.schemas.quote import QuoteResponse
+from app.schemas.checkout import CheckoutInitiateRequest, CheckoutInitiateResponse
 from app.models.cart import Cart
 from app.services.cart import (
     get_or_create_cart,
@@ -22,6 +23,7 @@ from app.services.cart import (
     remove_from_cart,
 )
 from app.services.quote import generate_cart_quote
+from app.services.payment import PaymentService
 
 router = APIRouter(prefix="/api/carts", tags=["carts"])
 
@@ -180,3 +182,24 @@ def get_quote_endpoint(
     """Convenience endpoint to retrieve authoritative quote for a cart."""
     quote = generate_cart_quote(db, cart_id=cart_id, session_id=session_id)
     return ApiResponse(data=quote)
+
+
+@router.post("/{cart_id}/checkout", response_model=ApiResponse[CheckoutInitiateResponse])
+def checkout_cart_endpoint(
+    cart_id: str,
+    payload: CheckoutInitiateRequest,
+    session_id: str = Depends(resolve_session_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Authoritative checkout initiation. Revalidates stock and live prices.
+    Creates or reuses internal MerchantOrder and Razorpay Order server-side.
+    """
+    checkout_res = PaymentService.initiate_checkout(
+        db=db,
+        cart_id=cart_id,
+        session_id=session_id,
+        checkout_data=payload,
+    )
+    return ApiResponse(data=checkout_res)
+

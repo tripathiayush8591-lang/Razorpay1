@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase:** 4 — Complete
-**Last completed:** 12 Agent Orchestration
-**Next:** 13 Checkout Creation (Phase 5)
+**Phase:** 5 — Complete
+**Last completed:** 15 Verification + Webhooks (Phase 5)
+**Next:** 16 Client Orders (Phase 6)
 
 ## Progress
 
@@ -32,9 +32,9 @@
 - [x] 12 Agent Orchestration
 
 ### Phase 5 — Razorpay
-- [ ] 13 Checkout Creation
-- [ ] 14 Razorpay Checkout
-- [ ] 15 Verification + Webhooks
+- [x] 13 Checkout Creation
+- [x] 14 Razorpay Checkout
+- [x] 15 Verification + Webhooks
 
 ### Phase 6 — Orders + Admin
 - [ ] 16 Client Orders
@@ -101,6 +101,17 @@ Razorpay Test Mode is retained. Explicit purchase approval is mandatory.
 - Frontend Migration: Rewired `AssistantPanel`, `ChatMessage`, `ProductRecommendation`, and `ApprovalCard` to live TanStack Query mutations. Built cleanly with 0 errors.
 - Verified Acceptance Criterion: "Build me a beginner running kit under ₹8,000" selects RunPro X2 road shoe + anti-blister technical socks, verifies inventory, adds them to cart, calculates authoritative quote of ₹6,198 (under ₹8,000 limit), and requests explicit user approval.
 - Automated Tests: 10 dedicated Phase 4 test cases and 21 total suite test cases passing with 100% success.
+
+### 2026-09-03 — Phase 5 Razorpay Checkout & Payment Verified
+- Razorpay Integration Wrapper: Clean isolation layer (`app/integrations/razorpay.py`) using official `razorpay` Python SDK, handling order creation, provider payment status verification, and HMAC-SHA256 signature checks. Secrets never leave backend.
+- Authoritative Checkout Initiation: `POST /api/carts/{cart_id}/checkout` revalidates live SQLite prices and inventory against `approved_total_paise`. Rejects stale quotes with HTTP 409 Conflict and updated quote total. Creates/reuses `MerchantOrder` (status: `PENDING_PAYMENT`).
+- Immutable Order Snapshot: Preserves purchased product identity, SKU, name, quantity, unit price, and line total in `items_snapshot_json`, protecting historical integrity.
+- Server-Side Verification: `POST /api/payments/razorpay/verify` cryptographically verifies signature using server-stored `razorpay_order_id`, and authoritatively checks that provider payment status is `captured`.
+- Idempotency & Inventory Safety: Decrements physical inventory and marks cart `converted` exactly once upon transitioning to `PAID`/`CONFIRMED`. Re-verification or retries return success idempotently without double decrement.
+- Webhook Handler: `POST /api/webhooks/razorpay` verifies signature on raw body, checks `X-Razorpay-Event-Id` uniqueness against `processed_webhook_events` table, and safely reconciles out-of-order events without downgrading confirmed orders.
+- Session Isolation: `GET /api/orders/{order_id}` enforces strict session ownership.
+- Official Razorpay Web Modal: Frontend `CheckoutForm.tsx` loads official `checkout.js`, initializes `window.Razorpay` with RunCraft branding, passes checkout data, handles modal callback, and routes to `/orders/{orderId}` upon verified backend response.
+- Automated Tests: 19 dedicated Phase 5 test cases and 40 total test suite cases passing with 100% success.
 
 ## Notes
 

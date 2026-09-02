@@ -118,6 +118,81 @@ Request:
 
 The backend must ignore the client amount for calculation and compare it against the freshly generated quote.
 
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "merchant_order_id": "order_abc123",
+    "razorpay_order_id": "order_MNOP123456",
+    "razorpay_key_id": "rzp_test_xxxxxx",
+    "amount_paise": 589800,
+    "currency": "INR",
+    "customer_name": "Demo Buyer",
+    "customer_email": "buyer@example.com",
+    "customer_phone": "9999999999"
+  }
+}
+```
+
+## Payment Verification
+
+`POST /api/payments/razorpay/verify`
+
+Headers:
+- `X-Session-ID: guest_session_123`
+
+Request:
+
+```json
+{
+  "merchant_order_id": "order_abc123",
+  "razorpay_order_id": "order_MNOP123456",
+  "razorpay_payment_id": "pay_QRST789012",
+  "razorpay_signature": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "order_id": "order_abc123",
+    "status": "CONFIRMED",
+    "amount_paise": 589800,
+    "currency": "INR",
+    "paid_at": "2026-09-03T02:30:00Z",
+    "confirmed_at": "2026-09-03T02:30:00Z"
+  }
+}
+```
+
+## Webhooks
+
+`POST /api/webhooks/razorpay`
+
+Headers:
+- `X-Razorpay-Signature: <hmac-sha256-signature>`
+- `X-Razorpay-Event-Id: <event-id>`
+
+Request: Raw body bytes of Razorpay webhook event (`order.paid`, `payment.captured`, `payment.failed`).
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "received": true,
+    "event": "payment.captured",
+    "status": "processed"
+  }
+}
+```
+
 ## Agent Chat
 
 `POST /api/agent/chat`

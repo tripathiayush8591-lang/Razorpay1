@@ -7,6 +7,7 @@ from app.models.cart import Cart, CartItem
 from app.models.order import MerchantOrder
 from app.models.payment import PaymentAttempt
 from app.models.audit import AuditEvent
+from app.models.webhook_event import ProcessedWebhookEvent
 
 __all__ = [
     "Base",
@@ -19,4 +20,5 @@ __all__ = [
     "MerchantOrder",
     "PaymentAttempt",
     "AuditEvent",
+    "ProcessedWebhookEvent",
 ]
