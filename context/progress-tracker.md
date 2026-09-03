@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase:** 5 — Complete
-**Last completed:** 15 Verification + Webhooks (Phase 5)
-**Next:** 16 Client Orders (Phase 6)
+**Phase:** 6 — Complete
+**Last completed:** 18 Audit Trail (Phase 6)
+**Next:** 19 MCP Adapter (Phase 7)
 
 ## Progress
 
@@ -37,9 +37,9 @@
 - [x] 15 Verification + Webhooks
 
 ### Phase 6 — Orders + Admin
-- [ ] 16 Client Orders
-- [ ] 17 Admin Orders
-- [ ] 18 Audit Trail
+- [x] 16 Client Orders
+- [x] 17 Admin Orders
+- [x] 18 Audit Trail
 
 ### Phase 7 — MCP + External Buyer
 - [ ] 19 MCP Adapter
@@ -112,6 +112,17 @@ Razorpay Test Mode is retained. Explicit purchase approval is mandatory.
 - Session Isolation: `GET /api/orders/{order_id}` enforces strict session ownership.
 - Official Razorpay Web Modal: Frontend `CheckoutForm.tsx` loads official `checkout.js`, initializes `window.Razorpay` with RunCraft branding, passes checkout data, handles modal callback, and routes to `/orders/{orderId}` upon verified backend response.
 - Automated Tests: 19 dedicated Phase 5 test cases and 40 total test suite cases passing with 100% success.
+
+### 2026-09-03 — Phase 6 Order Management, Fulfillment & Audit Verified
+- Alembic Migration: Added tracking columns (`processing_at`, `shipped_at`, `delivered_at`, `cancelled_at`, `cancellation_reason`, `carrier`, `tracking_number`) via `0003_phase6_fulfillment_and_tracking.py` without destructive reset.
+- Guest Order History: Added `GET /api/orders` enforcing strict guest session boundary via `X-Session-ID`; orders from Session A are completely hidden from Session B.
+- Admin Order Management: Exposed `GET /api/admin/orders` (with text search and status filter), `GET /api/admin/orders/{id}`, and `GET /api/admin/orders/{id}/audit`.
+- State Machine & Fulfillment Lifecycle: Supported `CONFIRMED` -> `PROCESSING` -> `SHIPPED` -> `DELIVERED` with atomic conditional execution (`UPDATE ... WHERE id = :id AND status IN (:expected_statuses)`). Zero inventory decrement during fulfillment.
+- Idempotency & Race Safety: Duplicate same-status fulfillment requests return cleanly with HTTP 200 without modifying timestamps or duplicating audit events. Conflicting status transitions return HTTP 409.
+- Admin Cancellation: Allowed exclusively for `CONFIRMED` or `PROCESSING` orders with mandatory cancellation reason. Physical inventory is untouched (no auto-restock in MVP) and no fake refund is issued.
+- Explicit Payment vs Fulfillment Semantics: Payment state (`PAID`, `PENDING_PAYMENT`) and fulfillment state (`CONFIRMED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`) are separated cleanly in schemas and UI.
+- TanStack Query UI: Connected `AdminOrders.tsx`, `AdminOrderDetail.tsx`, `OrdersPage.tsx`, and `OrderDetailPage.tsx` to live backend data with real-time audit trail and timeline steps.
+- Automated Verification: 23 dedicated Phase 6 tests and 63 total suite tests passing with 100% success. Frontend production build compiled cleanly with 0 errors.
 
 ## Notes
 

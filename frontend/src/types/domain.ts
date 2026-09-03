@@ -139,8 +139,33 @@ export type OrderStatus =
   | "PENDING_PAYMENT"
   | "PAID"
   | "CONFIRMED"
-  | "FULFILLED"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
   | "CANCELLED";
+
+export type PaymentStatus = "PENDING_PAYMENT" | "PAID" | "FAILED";
+
+export type PaymentDetails = {
+  provider: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  signature_verified: boolean;
+  status: string;
+  paid_at?: string;
+};
+
+export type FulfillmentDetails = {
+  status: OrderStatus;
+  carrier?: string;
+  tracking_number?: string;
+  confirmed_at?: string;
+  processing_at?: string;
+  shipped_at?: string;
+  delivered_at?: string;
+  cancelled_at?: string;
+  cancellation_reason?: string;
+};
 
 export type OrderItemSnapshot = {
   product_id: string;
@@ -163,12 +188,53 @@ export type Order = {
   amount_paise: number;
   currency: string;
   status: OrderStatus;
+  payment_status?: PaymentStatus;
+  payment_details?: PaymentDetails;
+  fulfillment?: FulfillmentDetails;
   razorpay_order_id?: string;
+  carrier?: string;
+  tracking_number?: string;
   approved_at?: string;
   paid_at?: string;
   confirmed_at?: string;
+  processing_at?: string;
+  shipped_at?: string;
+  delivered_at?: string;
+  cancelled_at?: string;
+  cancellation_reason?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type FulfillmentUpdateRequest = {
+  status: "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  carrier?: string;
+  tracking_number?: string;
+  cancellation_reason?: string;
+};
+
+export type AdminOrderListItem = {
+  id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  amount_paise: number;
+  currency: string;
+  status: OrderStatus;
+  payment_status: PaymentStatus;
+  items_count: number;
+  razorpay_order_id?: string;
+  carrier?: string;
+  tracking_number?: string;
+  created_at: string;
+  confirmed_at?: string;
+};
+
+export type AdminOrdersPageResponse = {
+  items: AdminOrderListItem[];
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 export type CheckoutInitiateRequest = {

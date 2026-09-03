@@ -214,19 +214,101 @@ Response contains:
 
 The model never directly returns an authoritative payment amount.
 
-## Order
+## Orders (Guest Shopper)
 
+### List Guest Orders
+`GET /api/orders`
+
+Headers:
+- `X-Session-ID: <session_id>`
+
+Returns orders belonging to the requester's guest session.
+
+### Get Guest Order Detail
 `GET /api/orders/{order_id}`
 
+Headers:
+- `X-Session-ID: <session_id>` (or `Authorization: Bearer <admin_token>`)
+
 Returns:
-- order ID
-- customer
-- items
-- amount
-- payment status
-- merchant order status
-- created time
-- timeline
+- `id`, `customer_name`, `customer_email`, `customer_phone`, `shipping_address`
+- `items`: immutable line items snapshot
+- `amount_paise`, `currency`
+- `status`: fulfillment status (`CONFIRMED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`)
+- `payment_status`: authoritative payment state (`PAID`, `PENDING_PAYMENT`, `FAILED`)
+- `payment_details`: provider metadata
+- `fulfillment`: timestamps, carrier, tracking number, cancellation info
+- `created_at`, `updated_at`
+
+## Admin Orders & Fulfillment
+
+### List Admin Orders
+`GET /api/admin/orders?q={query}&status={status}&limit={limit}&offset={offset}`
+
+Headers:
+- `Authorization: Bearer <admin_token>`
+
+Returns:
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "order_abc123",
+        "customer_name": "Runner One",
+        "customer_email": "runner@example.com",
+        "customer_phone": "+919876543210",
+        "amount_paise": 549900,
+        "currency": "INR",
+        "status": "CONFIRMED",
+        "payment_status": "PAID",
+        "items_count": 1,
+        "razorpay_order_id": "order_xxx",
+        "created_at": "2026-09-03T10:00:00Z"
+      }
+    ],
+    "total": 1,
+    "limit": 50,
+    "offset": 0
+  }
+}
+```
+
+### Get Admin Order Detail
+`GET /api/admin/orders/{order_id}`
+
+Headers:
+- `Authorization: Bearer <admin_token>`
+
+Returns full order response including immutable items snapshot, customer information, payment details, and fulfillment timestamps.
+
+### Update Order Fulfillment Status
+`POST /api/admin/orders/{order_id}/fulfillment`
+
+Headers:
+- `Authorization: Bearer <admin_token>`
+
+Request:
+```json
+{
+  "status": "PROCESSING | SHIPPED | DELIVERED | CANCELLED",
+  "carrier": "RunCraft Express",
+  "tracking_number": "BLR-98421",
+  "cancellation_reason": "Optional for non-cancel, mandatory if CANCELLED"
+}
+```
+
+State transitions are executed atomically with conditional SQL. Idempotent same-status requests safely return HTTP 200 without duplicate audit events or timestamp overwriting. Invalid transitions return HTTP 409 Conflict.
+
+### Get Admin Order Audit Trail
+`GET /api/admin/orders/{order_id}/audit`
+
+Headers:
+- `Authorization: Bearer <admin_token>`
+
+Returns chronological list of authoritative audit events for this specific order (`payment_verified`, `order_confirmed`, `order_processing_started`, `order_shipped`, `order_delivered`, `order_cancelled`).
+
 
 ## MCP Tools
 

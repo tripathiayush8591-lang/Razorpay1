@@ -3,14 +3,11 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ShippingAddressSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    line1: str
-    city: str
-    state: str
-    postal_code: str
-    country: str = "India"
+from app.schemas.order import (
+    ShippingAddressSchema,
+    OrderItemSnapshotSchema,
+    OrderResponse,
+)
 
 
 class CheckoutInitiateRequest(BaseModel):
@@ -56,37 +53,7 @@ class PaymentVerifyResponse(BaseModel):
     confirmed_at: Optional[datetime] = None
 
 
-class OrderItemSnapshotSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
 
-    product_id: str
-    sku: str
-    name: str
-    quantity: int
-    unit_price_paise: int
-    total_paise: int
-
-
-class OrderResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    merchant_id: str
-    cart_id: Optional[str] = None
-    customer_name: str
-    customer_email: str
-    customer_phone: str
-    shipping_address: ShippingAddressSchema
-    items: List[OrderItemSnapshotSchema] = Field(default_factory=list)
-    amount_paise: int
-    currency: str = "INR"
-    status: str
-    razorpay_order_id: Optional[str] = None
-    approved_at: Optional[datetime] = None
-    paid_at: Optional[datetime] = None
-    confirmed_at: Optional[datetime] = None
-    created_at: datetime
-    updated_at: datetime
 
 
 class WebhookResponse(BaseModel):

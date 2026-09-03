@@ -17,6 +17,9 @@ import type {
   PaymentVerifyRequest,
   PaymentVerifyResponse,
   Order,
+  AdminOrdersPageResponse,
+  FulfillmentUpdateRequest,
+  AuditEvent,
 } from "@/types/domain";
 import { getOrCreateGuestSessionId } from "@/lib/session";
 
@@ -355,6 +358,45 @@ export const apiClient = {
 
   async getOrder(orderId: string): Promise<ApiResponse<Order>> {
     return request<ApiResponse<Order>>(`/api/orders/${orderId}`);
+  },
+
+  async getOrders(): Promise<ApiResponse<Order[]>> {
+    return request<ApiResponse<Order[]>>("/api/orders");
+  },
+
+  // Admin Order Management
+  async getAdminOrders(params?: {
+    q?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<AdminOrdersPageResponse>> {
+    const query = new URLSearchParams();
+    if (params?.q) query.set("q", params.q);
+    if (params?.status && params.status !== "all") query.set("status", params.status);
+    if (params?.limit) query.set("limit", params.limit.toString());
+    if (params?.offset) query.set("offset", params.offset.toString());
+
+    const queryString = query.toString() ? `?${query.toString()}` : "";
+    return request<ApiResponse<AdminOrdersPageResponse>>(`/api/admin/orders${queryString}`);
+  },
+
+  async getAdminOrder(orderId: string): Promise<ApiResponse<Order>> {
+    return request<ApiResponse<Order>>(`/api/admin/orders/${orderId}`);
+  },
+
+  async updateAdminFulfillment(
+    orderId: string,
+    payload: FulfillmentUpdateRequest
+  ): Promise<ApiResponse<Order>> {
+    return request<ApiResponse<Order>>(`/api/admin/orders/${orderId}/fulfillment`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getAdminOrderAudit(orderId: string): Promise<ApiResponse<AuditEvent[]>> {
+    return request<ApiResponse<AuditEvent[]>>(`/api/admin/orders/${orderId}/audit`);
   },
 };
 
