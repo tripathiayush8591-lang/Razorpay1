@@ -360,3 +360,45 @@ export type AgentChatResponse = {
   approval_required: boolean;
 };
 
+export type MCPToolSchemaInfo = {
+  name: string;
+  description: string;
+  input_schema: Record<string, any>;
+};
+
+export type MCPToolExecutionLog = {
+  id: string;
+  tool_name: string;
+  arguments: Record<string, any>;
+  result?: any;
+  is_error: boolean;
+  timestamp: string;
+};
+
+export type MCPToolCallRecord = {
+  tool_name: string;
+  arguments: Record<string, any>;
+  result: any;
+  is_error: boolean;
+  duration_ms?: number;
+};
+
+export type ExternalBuyerChatRequest = {
+  message: string;
+  session_id: string;
+  cart_id?: string;
+  history?: ChatMessageTurn[];
+};
+
+export type ExternalBuyerChatResponse = {
+  message: string;
+  provider: "gemini" | "mcp_fallback";
+  tool_activity: ToolActivityItem[];
+  mcp_calls: MCPToolCallRecord[];
+  recommendations: any[];
+  cart_id?: string;
+  quote?: Quote;
+  approval_required: boolean;
+};
+
+

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, case, and_
 
 from app.core.config import settings
 from app.models.product import Product
@@ -37,15 +37,46 @@ def list_products(
 
     if q:
         search = f"%{q}%"
-        stmt = stmt.where(
-            Product.sku.ilike(search)
-            | Product.name.ilike(search)
-            | Product.description.ilike(search)
-            | Product.short_description.ilike(search)
-            | Product.tags_json.ilike(search)
-        )
+        words = [w for w in q.strip().split() if len(w) > 1]
+        if len(words) > 1:
+            word_conditions = []
+            for w in words:
+                w_search = f"%{w}%"
+                word_conditions.append(
+                    Product.sku.ilike(w_search)
+                    | Product.name.ilike(w_search)
+                    | Product.category.ilike(w_search)
+                    | Product.description.ilike(w_search)
+                    | Product.short_description.ilike(w_search)
+                    | Product.tags_json.ilike(w_search)
+                )
+            stmt = stmt.where(
+                Product.name.ilike(search)
+                | Product.category.ilike(search)
+                | Product.description.ilike(search)
+                | and_(*word_conditions)
+            )
+        else:
+            stmt = stmt.where(
+                Product.sku.ilike(search)
+                | Product.name.ilike(search)
+                | Product.category.ilike(search)
+                | Product.description.ilike(search)
+                | Product.short_description.ilike(search)
+                | Product.tags_json.ilike(search)
+            )
 
-    stmt = stmt.order_by(Product.created_at.desc())
+        relevance = case(
+            (Product.name.ilike(search), 1),
+            (Product.category.ilike(search), 2),
+            (Product.short_description.ilike(search), 3),
+            (Product.tags_json.ilike(search), 4),
+            else_=5,
+        )
+        stmt = stmt.order_by(relevance.asc(), Product.created_at.desc())
+    else:
+        stmt = stmt.order_by(Product.created_at.desc())
+
     return list(db.scalars(stmt).all())
 
 

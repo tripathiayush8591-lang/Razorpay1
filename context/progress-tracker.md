@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase:** 6 — Complete
-**Last completed:** 18 Audit Trail (Phase 6)
-**Next:** 19 MCP Adapter (Phase 7)
+**Phase:** 7 — Complete
+**Last completed:** 20 External Buyer UI (Phase 7)
+**Next:** 21 Analytics (Phase 8)
 
 ## Progress
 
@@ -42,8 +42,8 @@
 - [x] 18 Audit Trail
 
 ### Phase 7 — MCP + External Buyer
-- [ ] 19 MCP Adapter
-- [ ] 20 External Buyer UI
+- [x] 19 MCP Adapter
+- [x] 20 External Buyer UI
 
 ### Phase 8 — Demo Polish
 - [ ] 21 Analytics
@@ -123,6 +123,17 @@ Razorpay Test Mode is retained. Explicit purchase approval is mandatory.
 - Explicit Payment vs Fulfillment Semantics: Payment state (`PAID`, `PENDING_PAYMENT`) and fulfillment state (`CONFIRMED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`) are separated cleanly in schemas and UI.
 - TanStack Query UI: Connected `AdminOrders.tsx`, `AdminOrderDetail.tsx`, `OrdersPage.tsx`, and `OrderDetailPage.tsx` to live backend data with real-time audit trail and timeline steps.
 - Automated Verification: 23 dedicated Phase 6 tests and 63 total suite tests passing with 100% success. Frontend production build compiled cleanly with 0 errors.
+
+### 2026-09-03 — Phase 7 Model Context Protocol (MCP) & External AI Buyer Verified
+- Official MCP Python SDK v2: Pinned `mcp>=2.1.1,<3.0.0` and `mcp-types>=2.1.1,<3.0.0` with modern `MCPServer("runcraft-commerce")`.
+- Streamable HTTP Transport: Mounted `/mcp` onto FastAPI using `create_streamable_http_app()` with async session manager task group initialized in FastAPI lifespan.
+- Standard I/O (stdio) Transport: Created runnable CLI entrypoint `python -m app.mcp.server` sharing the exact same tool declarations for Claude Desktop and Cursor.
+- Thin Adapter Architecture: Implemented 13 commerce tools (`search_products`, `get_product`, `check_inventory`, `get_delivery_estimate`, `get_offers`, `create_cart`, `add_to_cart`, `remove_from_cart`, `get_cart`, `get_final_quote`, `create_checkout`, `get_order`, `get_order_status`) delegating 100% of logic to existing Phase 3–6 services.
+- Strict Human Approval Boundary: Enforced that an external AI tool call can never autonomously confirm orders or mark payments as paid. `create_checkout` verifies `approved_total_paise` against live SQLite prices, creates orders in `PENDING_PAYMENT`, and requires human Razorpay signature verification to confirm.
+- Session Isolation: Blocked cross-session cart access and order inspection with HTTP 403 Forbidden.
+- Audit Trail: Logged all external AI tool calls to `audit_events` with `actor_type="external_ai_buyer"`.
+- External AI Buyer UI: Created `ExternalBuyerPage.tsx` at `/external-buyer` demonstrating the complete Demo 3 journey: natural language request, live tool execution trace, structured recommendations, authoritative quote card, explicit human approval CTA, Razorpay Test modal launch, and order status retrieval.
+- Automated Verification: 9 dedicated Phase 7 MCP tests and 72 total suite tests passing with 100% success. Frontend production build compiled in 5.74s with 0 errors.
 
 ## Notes
 

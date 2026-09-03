@@ -32,6 +32,16 @@ export const AdminChannels: React.FC = () => {
       input: "{ product_id: string, requested_quantity: number }",
     },
     {
+      name: "get_delivery_estimate",
+      description: "Compute shipping fees and delivery estimates based on merchant rules and postal code.",
+      input: "{ postal_code: string, cart_subtotal_paise?: number }",
+    },
+    {
+      name: "get_offers",
+      description: "Retrieve merchant promotional policies, free delivery thresholds, and discount caps.",
+      input: "{}",
+    },
+    {
       name: "create_cart",
       description: "Initialize an authoritative server-owned cart for guest or registered buyer.",
       input: "{ session_id?: string }",
@@ -158,7 +168,7 @@ export const AdminChannels: React.FC = () => {
               </div>
               <div className="flex justify-between py-1 border-b border-border/60">
                 <span className="text-text-secondary">Transport:</span>
-                <span className="font-mono text-text-primary">JSON-RPC 2.0 / SSE</span>
+                <span className="font-mono text-text-primary">Streamable HTTP (/mcp) + stdio</span>
               </div>
               <div className="flex justify-between py-1 border-b border-border/60">
                 <span className="text-text-secondary">Exposed Tools:</span>
@@ -167,15 +177,20 @@ export const AdminChannels: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row gap-2">
+            <Link to="/external-buyer" className="flex-1">
+              <Button variant="outline" size="sm" className="w-full text-xs" icon={<ExternalLink className="w-3.5 h-3.5" />}>
+                Launch Buyer Demo
+              </Button>
+            </Link>
             <Button
               variant="secondary"
               size="sm"
-              className="w-full text-xs"
+              className="flex-1 text-xs"
               onClick={() => setToolsExpanded(!toolsExpanded)}
               icon={toolsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             >
-              {toolsExpanded ? "Hide Exposed Tools" : "Inspect Exposed Tools"}
+              {toolsExpanded ? "Hide Tools" : "Inspect Tools"}
             </Button>
           </div>
         </div>

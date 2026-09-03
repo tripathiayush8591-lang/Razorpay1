@@ -21,6 +21,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import AdminPolicies from "./pages/admin/AdminPolicies";
 import AdminChannels from "./pages/admin/AdminChannels";
+import ExternalBuyerPage from "./pages/client/ExternalBuyerPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,7 @@ export function App() {
                 <Route path="checkout" element={<CheckoutPage />} />
                 <Route path="orders" element={<OrdersPage />} />
                 <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                <Route path="external-buyer" element={<ExternalBuyerPage />} />
               </Route>
 
               {/* Admin Login (Unwrapped) */}

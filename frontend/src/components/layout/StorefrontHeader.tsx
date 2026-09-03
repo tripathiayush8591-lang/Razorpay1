@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag, Sparkles, Shield, Compass, Search } from "lucide-react";
+import { ShoppingBag, Sparkles, Shield, Compass, Search, Bot } from "lucide-react";
 import { useMockCommerce } from "../../lib/mock/MockCommerceContext";
 
 export const StorefrontHeader: React.FC = () => {
@@ -10,6 +10,7 @@ export const StorefrontHeader: React.FC = () => {
   const navLinks = [
     { label: "Shop", path: "/shop", icon: <Compass className="w-4 h-4" /> },
     { label: "AI Assistant", path: "/assistant", icon: <Sparkles className="w-4 h-4 text-accent" /> },
+    { label: "AI Buyer (MCP)", path: "/external-buyer", icon: <Bot className="w-4 h-4 text-accent" /> },
     { label: "Track Orders", path: "/orders" },
   ];
 

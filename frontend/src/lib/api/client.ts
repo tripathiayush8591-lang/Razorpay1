@@ -20,6 +20,9 @@ import type {
   AdminOrdersPageResponse,
   FulfillmentUpdateRequest,
   AuditEvent,
+  MCPToolSchemaInfo,
+  ExternalBuyerChatRequest,
+  ExternalBuyerChatResponse,
 } from "@/types/domain";
 import { getOrCreateGuestSessionId } from "@/lib/session";
 
@@ -397,6 +400,30 @@ export const apiClient = {
 
   async getAdminOrderAudit(orderId: string): Promise<ApiResponse<AuditEvent[]>> {
     return request<ApiResponse<AuditEvent[]>>(`/api/admin/orders/${orderId}/audit`);
+  },
+
+  // MCP / External AI Buyer methods
+  async getMcpTools(): Promise<ApiResponse<MCPToolSchemaInfo[]>> {
+    return request<ApiResponse<MCPToolSchemaInfo[]>>("/api/mcp/tools");
+  },
+
+  async executeMcpTool<T = any>(
+    tool_name: string,
+    argumentsPayload: Record<string, any>
+  ): Promise<ApiResponse<{ tool_name: string; is_error: boolean; result: T }>> {
+    return request<ApiResponse<{ tool_name: string; is_error: boolean; result: T }>>("/api/mcp/execute", {
+      method: "POST",
+      body: JSON.stringify({ tool_name, arguments: argumentsPayload }),
+    });
+  },
+
+  async runExternalBuyerChat(
+    payload: ExternalBuyerChatRequest
+  ): Promise<ApiResponse<ExternalBuyerChatResponse>> {
+    return request<ApiResponse<ExternalBuyerChatResponse>>("/api/external-buyer/chat", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 };
 

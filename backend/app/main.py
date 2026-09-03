@@ -16,8 +16,15 @@ from app.api.routes.agent import router as agent_router
 from app.api.routes.payments import router as payments_router
 from app.api.routes.orders import router as orders_router
 from app.api.routes.admin_orders import router as admin_orders_router
+from app.api.routes.mcp_routes import router as mcp_routes_router
+from app.api.routes.external_buyer import router as external_buyer_router
+from app.mcp.server import mcp_server, create_streamable_http_app
 from app.db.base import Base
 from app.db.session import engine
+
+
+# Create the Streamable HTTP ASGI app for MCP
+mcp_app = create_streamable_http_app()
 
 
 @asynccontextmanager
@@ -27,7 +34,14 @@ async def lifespan(app: FastAPI):
     # Ensure static upload directories exist
     products_upload_dir = settings.STATIC_UPLOADS_DIR / "products"
     products_upload_dir.mkdir(parents=True, exist_ok=True)
-    yield
+    
+    # Run the MCP StreamableHTTP session manager task group
+    sm = getattr(mcp_server._lowlevel_server, "_session_manager", None)
+    if sm is not None and getattr(sm, "_has_started", False):
+        sm._has_started = False
+
+    async with mcp_server._lowlevel_server.session_manager.run():
+        yield
 
 
 app = FastAPI(
@@ -45,6 +59,9 @@ uploads_dir = settings.STATIC_UPLOADS_DIR
 uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static/uploads", StaticFiles(directory=str(uploads_dir)), name="static_uploads")
 
+# Mount MCP Streamable HTTP endpoint
+app.mount("/mcp", mcp_app)
+
 # Include Routers
 app.include_router(health_router)
 app.include_router(products_router)
@@ -58,6 +75,8 @@ app.include_router(agent_router)
 app.include_router(payments_router)
 app.include_router(orders_router)
 app.include_router(admin_orders_router)
+app.include_router(mcp_routes_router)
+app.include_router(external_buyer_router, prefix="/api")
 
 
 if __name__ == "__main__":
