@@ -12,6 +12,7 @@ import {
   Truck,
   XCircle,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 import { useMockCommerce } from "../../lib/mock/MockCommerceContext";
 import { Button } from "../../components/ui/Button";
@@ -38,6 +39,13 @@ export const OrderDetailPage: React.FC = () => {
       return await apiClient.getOrder(orderId);
     },
     enabled: !!orderId,
+    refetchInterval: (query) => {
+      const ord = query.state.data?.data;
+      if (ord && (ord.status === "PENDING_PAYMENT" || ord.payment_status === "PENDING_PAYMENT")) {
+        return 3000;
+      }
+      return false;
+    },
   });
 
   const order = backendOrderResponse?.data;
@@ -148,6 +156,41 @@ export const OrderDetailPage: React.FC = () => {
                   </span>
                 )}
               </p>
+            </div>
+          </div>
+          <div className="sm:text-right shrink-0">
+            {getPaymentBadge(order.payment_status)}
+          </div>
+        </div>
+      ) : order.status === "PENDING_PAYMENT" || order.payment_status === "PENDING_PAYMENT" ? (
+        <div className="bg-warning-light border border-warning/30 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-warning text-surface flex items-center justify-center shrink-0 shadow-sm">
+              <Clock className="w-7 h-7 animate-pulse" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-text-primary">
+                  Payment Awaiting Confirmation
+                </h1>
+                <Badge variant="warning">AWAITING WEBHOOK</Badge>
+              </div>
+              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                Your order has been recorded and is awaiting verified payment signature or webhook confirmation from Razorpay.
+                This page polls automatically every 3 seconds.
+              </p>
+              <div className="pt-2 flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetch()}
+                  disabled={isFetching}
+                  icon={<RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />}
+                >
+                  Check Status Now
+                </Button>
+                <span className="text-[11px] text-text-muted">Auto-polling active</span>
+              </div>
             </div>
           </div>
           <div className="sm:text-right shrink-0">

@@ -3,6 +3,7 @@ import type { Quote } from "../../types/domain";
 import { Button } from "../ui/Button";
 import { ShieldCheck, ArrowRight, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface ApprovalCardProps {
   quote: Quote;
@@ -11,8 +12,11 @@ export interface ApprovalCardProps {
 
 export const ApprovalCard: React.FC<ApprovalCardProps> = ({ quote, onApprove }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleApprove = () => {
+    queryClient.invalidateQueries({ queryKey: ["active-cart"] });
+    queryClient.invalidateQueries({ queryKey: ["active-quote"] });
     if (onApprove) {
       onApprove();
     } else {

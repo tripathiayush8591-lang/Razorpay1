@@ -50,8 +50,32 @@ def run_deterministic_fallback(
                 last_assistant_msg = turn.content.lower()
                 break
 
+    # Intent 0: Direct checkout, payment, or order review request
+    checkout_triggers = [
+        "checkout", "check out", "place order", "pay", "payment",
+        "proceed to checkout", "buy now", "confirm order", "approve and pay", "purchase"
+    ]
+    if any(t in lower for t in checkout_triggers):
+        current_cart = get_cart_by_id(executor.db, executor.cart_id)
+        if current_cart and current_cart.items:
+            quote = executor.get_final_quote()
+            total_items = sum(i.quantity for i in current_cart.items)
+            response_msg = (
+                f"Your order is ready for checkout! You have {total_items} item(s) in your cart "
+                f"with an authoritative total of ₹{quote.total_paise / 100:,.2f}. "
+                "Please review the breakdown below and click **Approve & Checkout** to proceed to payment."
+            )
+            approval_required = quote.valid
+        else:
+            response_msg = (
+                "Your shopping cart is currently empty. Tell me what running gear you need "
+                "(for example: 'Build me a beginner running kit under ₹8,000' or 'Find race day carbon plate shoes') "
+                "and I will assemble your kit!"
+            )
+            approval_required = False
+
     # Intent 1: Beginner running kit under budget
-    if ("kit" in lower and ("running" in lower or "beginner" in lower)) or (
+    elif ("kit" in lower and ("running" in lower or "beginner" in lower)) or (
         "beginner" in lower and "running" in lower and budget_paise is not None
     ):
         target_budget = budget_paise or 800000  # Default to 8,000 if not parsed
@@ -93,11 +117,18 @@ def run_deterministic_fallback(
 
         # Check hard budget constraint
         if total_candidate > target_budget:
-            response_msg = (
-                f"I found the {road_shoe.name} (₹{shoe_price // 100}), but paired with recommended accessories, "
-                f"it would exceed your budget of ₹{target_budget // 100}. "
-                f"Let me recommend the {road_shoe.name} individually."
-            )
+            if road_shoe.price_paise > target_budget:
+                response_msg = (
+                    f"Our lowest-priced performance running shoe is the {road_shoe.name} at ₹{road_shoe.price_paise // 100:,.2f}, "
+                    f"which exceeds your requested budget of ₹{target_budget // 100:,.2f}. "
+                    f"Would you like to review the {road_shoe.name} individually or adjust your budget?"
+                )
+            else:
+                response_msg = (
+                    f"I found the {road_shoe.name} (₹{shoe_price // 100}), but paired with recommended accessories, "
+                    f"it would exceed your budget of ₹{target_budget // 100}. "
+                    f"Let me recommend the {road_shoe.name} individually."
+                )
             recommendations.append(
                 ProductRecommendationItem(
                     product=ProductResponse.from_orm_model(road_shoe),
@@ -231,13 +262,20 @@ def run_deterministic_fallback(
                 f"Here are top recommendations based on your request. Let me know if you would like me to add any to your cart!"
             )
         else:
-            # Helpful fallback without crashing or hallucinating
-            response_msg = (
-                "I am your RunCraft AI Commerce Assistant. I can help you search our live running catalog, "
-                "verify stock, configure gear kits, and prepare an authoritative quote. "
-                "Try asking: 'Build me a beginner running kit under ₹8,000', 'Find carbon plate race shoes', "
-                "or 'Add hydration flask'."
-            )
+            # Check if user asked for non-running items
+            non_catalog_keywords = ["laptop", "phone", "iphone", "tennis", "guitar", "car", "pizza", "flight", "tent", "coffee", "book"]
+            matched_non_cat = next((kw for kw in non_catalog_keywords if kw in lower), None)
+            if matched_non_cat:
+                response_msg = (
+                    f"RunCraft specializes exclusively in premium running gear (shoes, apparel, socks, and hydration). "
+                    f"I cannot fulfill requests for '{matched_non_cat}', but I would be glad to help you find running shoes or assemble a race day kit!"
+                )
+            else:
+                response_msg = (
+                    f"I couldn't find any products matching '{message.strip()[:40]}' in our running catalog. "
+                    "RunCraft specializes in road & trail running shoes, athletic apparel, running socks, and hydration accessories. "
+                    "Try asking: 'Build me a beginner running kit under ₹8,000', 'Find carbon plate race shoes', or 'Add hydration flask'."
+                )
 
     # Get latest authoritative cart state
     latest_cart = get_cart_by_id(executor.db, executor.cart_id)

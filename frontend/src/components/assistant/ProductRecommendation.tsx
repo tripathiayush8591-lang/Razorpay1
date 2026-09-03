@@ -18,7 +18,7 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({
 
   // Active authoritative cart
   const { data: cartData } = useQuery({
-    queryKey: ["cart"],
+    queryKey: ["active-cart"],
     queryFn: () => apiClient.getOrCreateCart(),
   });
 
@@ -33,7 +33,10 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({
       return apiClient.addToCart(activeCart.id, product.id, 1);
     },
     onSuccess: (res) => {
+      queryClient.setQueryData(["active-cart"], res);
       queryClient.setQueryData(["cart"], res);
+      queryClient.invalidateQueries({ queryKey: ["active-cart"] });
+      queryClient.invalidateQueries({ queryKey: ["active-quote"] });
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });

@@ -23,6 +23,7 @@ import type {
   MCPToolSchemaInfo,
   ExternalBuyerChatRequest,
   ExternalBuyerChatResponse,
+  AdminAnalytics,
 } from "@/types/domain";
 import { getOrCreateGuestSessionId } from "@/lib/session";
 
@@ -351,10 +352,16 @@ export const apiClient = {
   },
 
   async verifyPayment(
-    payload: PaymentVerifyRequest
+    payload: PaymentVerifyRequest,
+    sessionId?: string
   ): Promise<ApiResponse<PaymentVerifyResponse>> {
+    const headers: Record<string, string> = {};
+    if (sessionId) {
+      headers["X-Session-ID"] = sessionId;
+    }
     return request<ApiResponse<PaymentVerifyResponse>>("/api/payments/razorpay/verify", {
       method: "POST",
+      headers,
       body: JSON.stringify(payload),
     });
   },
@@ -400,6 +407,16 @@ export const apiClient = {
 
   async getAdminOrderAudit(orderId: string): Promise<ApiResponse<AuditEvent[]>> {
     return request<ApiResponse<AuditEvent[]>>(`/api/admin/orders/${orderId}/audit`);
+  },
+
+  // Admin Analytics
+  async getAdminAnalytics(params?: { days?: number }): Promise<ApiResponse<AdminAnalytics>> {
+    const query = new URLSearchParams();
+    if (params?.days !== undefined && params?.days !== null) {
+      query.set("days", params.days.toString());
+    }
+    const queryString = query.toString() ? `?${query.toString()}` : "";
+    return request<ApiResponse<AdminAnalytics>>(`/api/admin/analytics${queryString}`);
   },
 
   // MCP / External AI Buyer methods

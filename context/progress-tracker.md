@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase:** 7 — Complete
-**Last completed:** 20 External Buyer UI (Phase 7)
-**Next:** 21 Analytics (Phase 8)
+**Phase:** 8 — Completed (Ready for Final Manual Testing & Review)
+**Last completed:** 24 End-to-End Rehearsal (Phase 8)
+**Next:** Final Manual Testing & Review
 
 ## Progress
 
@@ -46,10 +46,10 @@
 - [x] 20 External Buyer UI
 
 ### Phase 8 — Demo Polish
-- [ ] 21 Analytics
-- [ ] 22 Error States
-- [ ] 23 Final Demo Seed
-- [ ] 24 End-to-End Rehearsal
+- [x] 21 Analytics
+- [x] 22 Error States
+- [x] 23 Final Demo Seed
+- [x] 24 End-to-End Rehearsal
 
 ## Decisions
 
@@ -134,6 +134,38 @@ Razorpay Test Mode is retained. Explicit purchase approval is mandatory.
 - Audit Trail: Logged all external AI tool calls to `audit_events` with `actor_type="external_ai_buyer"`.
 - External AI Buyer UI: Created `ExternalBuyerPage.tsx` at `/external-buyer` demonstrating the complete Demo 3 journey: natural language request, live tool execution trace, structured recommendations, authoritative quote card, explicit human approval CTA, Razorpay Test modal launch, and order status retrieval.
 - Automated Verification: 9 dedicated Phase 7 MCP tests and 72 total suite tests passing with 100% success. Frontend production build compiled in 5.74s with 0 errors.
+ 
+### 2026-09-03 — Phase 8 Task 21 Admin Analytics Verified
+- Authoritative Backend Analytics Service: Created `app/services/analytics.py` computing gross confirmed revenue, confirmed orders, active SKUs, AOV, cart creation & conversion funnels, in-app agent chat turns/sessions, external AI MCP tool executions/sessions, cross-sell policy basket attachment, and daily trends directly from SQLite.
+- Channel Attribution Engine: Authoritatively distinguished buyer journeys (`direct_storefront`, `in_app_agent`, `external_ai`) by correlating confirmed order cart session IDs with `audit_events` ledger without mutating base schemas.
+- Policy Cross-Sell Analysis: Evaluated live confirmed order line items against `merchant_policies.cross_sell_rules_json`, measuring basket co-occurrence of trigger and recommend categories (e.g. Running Shoes -> Running Socks).
+- REST Route: Exposed `GET /api/admin/analytics` secured with admin Bearer token and supporting dynamic `days` window filtering.
+- Complete Mock Data Elimination: Overhauled `AdminDashboard.tsx`, entirely removing `useMockCommerce()` and hardcoded placeholder metrics. Connected live queries with TanStack Query.
+- Dashboard Enhancements: Added 7-day / 30-day / All-time pill filter, conversion funnel step cards, AI telemetry counters, channel revenue share cards, live recent orders table, and low stock inventory watchlist with loading skeletons and error resilience.
+- Automated Verification: 6 dedicated Task 21 tests and 84 total backend test suite tests passing with 100% success. Frontend production build compiled in 3.86s with 0 errors.
+
+### 2026-09-03 — Phase 8 Task 22 Error States & Messaging Verified
+- Standard UI Primitives: Created lightweight, zero-dependency `Toast.tsx` notification system (`ToastProvider`, `useToast()`) with info/success/warning/error variants and auto-dismiss timers, mounted globally in `App.tsx`. Created reusable `EmptyState.tsx` adhering to `ui-rules.md`.
+- Storefront & Cart Stock Boundaries: In `MockCommerceContext.tsx` and `CartDrawer.tsx`, surfaced out-of-stock and inventory threshold boundaries directly. Added inline red badge (`Out of stock — please remove`) and yellow badge (`Only X available in warehouse`) on line items. Disabled checkout CTA with an amber warning when out-of-stock items remain in cart.
+- Stale Quote Detection & Interactive Recovery: In `CheckoutForm.tsx`, detected HTTP 409 and price/quote mismatches during checkout initiation. Displayed an authoritative warning banner with an interactive "Refresh Quote & Review Total" CTA that synchronizes the form with server-revalidated prices without reloading.
+- Payment Dismissal & Gateway Feedback: Handled Razorpay modal `ondismiss` by presenting non-intrusive reassuring info feedback: "Payment window was closed. Your cart and shipping details are preserved — click 'Approve & Pay' whenever you are ready."
+- Order Payment Status Real-Time Polling: In `OrderDetailPage.tsx`, added amber banner for orders in `PENDING_PAYMENT` with auto-polling every 3 seconds and a manual "Check Status Now" CTA, ensuring clear status separation from confirmed fulfillment.
+- In-App Agent & External Buyer Guardrails: Enhanced `agent_fallback.py` and `ExternalBuyerPage.tsx` with friendly catalog scope guidance when users ask for non-running items (laptops, tennis, etc.) or set impossible budgets (< ₹2,999), stopping before checkout without hallucinating or crashing.
+- Design Token Compliance: Verified all error alerts, toasts, and status notices strictly use design tokens (`error`, `error-light`, `error-foreground`, `warning`, `warning-light`, `info`, `surface`, `border`).
+- Automated Verification: Added 7 dedicated error state regression tests in `test_error_states.py`. Full test suite of 93 backend tests passing with 100% success in 34.31s. Frontend built with Vite with 0 errors in 3.79s.
+
+### 2026-09-03 — Phase 8 Task 23 Deterministic Final Demo Seed Verified
+- Canonical Product Catalog: Maintained 10 deterministic RunCraft products (`RUN-X2-BLK-42`, `SWIFT-STRIDE-BLU-41`, `CARB-RACE-NEON-42`, etc.) with ample physical stock (50–100 units), tags, attributes, and high-resolution assets.
+- Clean Idempotency & Reset: Built repeatable seeding engine supporting safe repeated runs and clean `--reset` mode to clear transient test clutter.
+- Realistic Multi-Channel Baseline: Seeded 5 confirmed/fulfilled baseline orders, active/abandoned carts, and audit events across `direct_storefront`, `in_app_agent`, and `external_ai` channels with realistic time distributions.
+- Fulfillment Demonstration Ready: Seeded order `ord_demo_conf_01` in `CONFIRMED` status, ready for instant live demonstration of the fulfillment state machine on stage.
+- Immediate Authoritative Analytics: Baseline seed immediately delivers non-zero, genuine analytics: ₹36,190.00 revenue, 5 orders, ₹7,238.00 AOV, 71.4% conversion rate, and 2 cross-sell attachments.
+- Automated Tests: 6 dedicated seed tests in `tests/test_demo_seed.py` passing with 100% success.
+
+### 2026-09-03 — Phase 8 Task 24 End-to-End Rehearsal Verified
+- Programmatic Rehearsal Engine: Created `app/demo/rehearsal.py` validating all 11 stages (A through K): Storefront shopping, In-app agent, External AI Buyer + MCP, Human approval boundary, Razorpay checkout creation, Payment signature verification, Admin fulfillment state machine, Customer tracking & session boundary, Audit trail ledger, Real-time analytics, and Error/recovery scenarios.
+- Zero-Regression Rehearsal Pytest: Wrapped runner into `tests/test_rehearsal.py` passing in 5.23s.
+- Rehearsal Checklist & Presenter Guide: Created `context/rehearsal-checklist.md` with explicit URLs, clicks, inputs, expected UI outputs, and failure checkpoints for the hackathon demo.
 
 ## Notes
 

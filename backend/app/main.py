@@ -16,6 +16,7 @@ from app.api.routes.agent import router as agent_router
 from app.api.routes.payments import router as payments_router
 from app.api.routes.orders import router as orders_router
 from app.api.routes.admin_orders import router as admin_orders_router
+from app.api.routes.admin_analytics import router as admin_analytics_router
 from app.api.routes.mcp_routes import router as mcp_routes_router
 from app.api.routes.external_buyer import router as external_buyer_router
 from app.mcp.server import mcp_server, create_streamable_http_app
@@ -29,8 +30,8 @@ mcp_app = create_streamable_http_app()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure tables exist on startup as a fallback
-    Base.metadata.create_all(bind=engine)
+    if settings.AUTO_CREATE_TABLES and settings.ENVIRONMENT.lower() != "production":
+        Base.metadata.create_all(bind=engine)
     # Ensure static upload directories exist
     products_upload_dir = settings.STATIC_UPLOADS_DIR / "products"
     products_upload_dir.mkdir(parents=True, exist_ok=True)
@@ -75,10 +76,16 @@ app.include_router(agent_router)
 app.include_router(payments_router)
 app.include_router(orders_router)
 app.include_router(admin_orders_router)
+app.include_router(admin_analytics_router)
 app.include_router(mcp_routes_router)
 app.include_router(external_buyer_router, prefix="/api")
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=True)
+    uvicorn.run(
+        "app.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.ENVIRONMENT.lower() != "production",
+    )

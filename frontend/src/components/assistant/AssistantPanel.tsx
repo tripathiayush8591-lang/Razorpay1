@@ -21,7 +21,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
 
   // Authoritative active cart query
   const { data: cartData } = useQuery({
-    queryKey: ["cart"],
+    queryKey: ["active-cart"],
     queryFn: () => apiClient.getOrCreateCart(),
   });
 
@@ -76,10 +76,13 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
       return res.data;
     },
     onSuccess: (data) => {
-      // Sync authoritative cart state across storefront immediately
+      // Sync authoritative cart and quote state across storefront immediately
       if (data.cart) {
+        queryClient.setQueryData(["active-cart"], { success: true, data: data.cart });
         queryClient.setQueryData(["cart"], { success: true, data: data.cart });
       }
+      queryClient.invalidateQueries({ queryKey: ["active-cart"] });
+      queryClient.invalidateQueries({ queryKey: ["active-quote"] });
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       queryClient.invalidateQueries({ queryKey: ["quote"] });
 
@@ -125,6 +128,8 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
   };
 
   const handleApproveQuote = () => {
+    queryClient.invalidateQueries({ queryKey: ["active-cart"] });
+    queryClient.invalidateQueries({ queryKey: ["active-quote"] });
     if (onClose) onClose();
     navigate("/checkout");
   };

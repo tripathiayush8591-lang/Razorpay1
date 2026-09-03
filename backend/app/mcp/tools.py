@@ -2,6 +2,7 @@ import uuid
 import logging
 from typing import Any, Dict, List, Optional
 
+from app.core.config import settings
 from app.mcp.server import mcp_server, get_db_session, format_mcp_error, record_mcp_audit
 from app.schemas.product import ProductResponse
 from app.schemas.cart import CartResponse
@@ -419,7 +420,8 @@ def create_checkout(
             result["amount_inr"] = result["amount_paise"] / 100
             result["approval_status"] = "APPROVED"
             result["payment_status"] = "PENDING_PAYMENT"
-            result["checkout_url"] = f"http://localhost:5173/checkout?orderId={result['merchant_order_id']}"
+            frontend_url = settings.FRONTEND_PUBLIC_URL.rstrip("/")
+            result["checkout_url"] = f"{frontend_url}/checkout?orderId={result['merchant_order_id']}"
 
             record_mcp_audit(
                 db=db,

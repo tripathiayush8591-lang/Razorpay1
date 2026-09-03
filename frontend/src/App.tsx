@@ -23,6 +23,8 @@ import AdminPolicies from "./pages/admin/AdminPolicies";
 import AdminChannels from "./pages/admin/AdminChannels";
 import ExternalBuyerPage from "./pages/client/ExternalBuyerPage";
 
+import { ToastProvider } from "./components/ui/Toast";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -37,8 +39,9 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <AdminAuthProvider>
         <MockCommerceProvider>
-          <BrowserRouter>
-            <Routes>
+          <ToastProvider>
+            <BrowserRouter>
+              <Routes>
               {/* Client Storefront Shell */}
               <Route path="/" element={<AppShell />}>
                 <Route index element={<LandingPage />} />
@@ -81,6 +84,7 @@ export function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
+          </ToastProvider>
         </MockCommerceProvider>
       </AdminAuthProvider>
     </QueryClientProvider>

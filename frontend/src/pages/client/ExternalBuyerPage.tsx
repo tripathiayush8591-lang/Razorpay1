@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Package,
   AlertCircle,
+  AlertTriangle,
   Check,
   Lock,
   Zap,
@@ -228,12 +229,15 @@ export const ExternalBuyerPage: React.FC = () => {
             setRunningWorkflow(true);
 
             // 3. Cryptographic payment verification
-            await apiClient.verifyPayment({
-              merchant_order_id: checkoutPayload.merchant_order_id,
-              razorpay_order_id: paymentResponse.razorpay_order_id,
-              razorpay_payment_id: paymentResponse.razorpay_payment_id,
-              razorpay_signature: paymentResponse.razorpay_signature,
-            });
+            await apiClient.verifyPayment(
+              {
+                merchant_order_id: checkoutPayload.merchant_order_id,
+                razorpay_order_id: paymentResponse.razorpay_order_id,
+                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_signature: paymentResponse.razorpay_signature,
+              },
+              sessionId
+            );
 
             // 4. External AI Buyer calls get_order via MCP
             const orderArgs = {
@@ -521,7 +525,7 @@ export const ExternalBuyerPage: React.FC = () => {
                     key={idx}
                     className={`p-3 rounded-xl border ${
                       log.is_error
-                        ? "bg-error-light/30 border-error/40 text-error-dark"
+                        ? "bg-error-light border-error/20 text-error-foreground"
                         : "bg-surface-secondary/70 border-border/70 text-text-primary"
                     }`}
                   >
@@ -690,8 +694,8 @@ export const ExternalBuyerPage: React.FC = () => {
 
                 {/* Error Banner */}
                 {approvalError && (
-                  <div className="p-3 rounded-xl bg-error-light/50 border border-error/40 text-error-dark text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
+                  <div className="p-3 rounded-xl bg-error-light border border-error/20 text-error-foreground text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-error" />
                     <span>{approvalError}</span>
                   </div>
                 )}
@@ -715,12 +719,30 @@ export const ExternalBuyerPage: React.FC = () => {
                   </p>
                 </div>
               </div>
+            ) : agentMessage && !runningWorkflow ? (
+              <div className="py-8 text-center text-xs space-y-3 bg-warning-light border border-warning/20 rounded-xl p-5">
+                <AlertTriangle className="w-7 h-7 mx-auto text-warning" />
+                <p className="font-bold text-text-primary text-sm">Request Unfulfillable Under Current Constraints</p>
+                <p className="text-xs max-w-xs mx-auto text-text-secondary leading-relaxed">
+                  The AI buyer evaluated our live catalog via MCP, but could not assemble a valid quote matching your exact constraints.
+                </p>
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQueryPrompt("Find beginner running shoes under ₹6,000 and prepare my quote for checkout")}
+                    className="text-xs"
+                  >
+                    Try Recommended Running Kit (₹6,000)
+                  </Button>
+                </div>
+              </div>
             ) : (
               <div className="py-12 text-center text-xs text-text-muted space-y-2">
                 <ShoppingCart className="w-8 h-8 mx-auto opacity-30" />
                 <p className="font-medium text-text-secondary">No Quote Awaiting Approval</p>
                 <p className="text-[11px] max-w-xs mx-auto">
-                  Run the External AI Buyer prompt above to have Gemini discover products and assemble an authoritative quote.
+                  Run the External AI Buyer prompt above to have the agent discover products and assemble an authoritative quote.
                 </p>
               </div>
             )}

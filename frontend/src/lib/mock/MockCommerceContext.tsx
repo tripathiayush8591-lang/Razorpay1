@@ -22,6 +22,8 @@ export interface MockCommerceContextType {
   cartCount: number;
   cartSubtotalPaise: number;
   isCartLoading: boolean;
+  cartError: string | null;
+  clearCartError: () => void;
 
   // Drawers
   isCartOpen: boolean;
@@ -51,6 +53,9 @@ export const MockCommerceProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [cartError, setCartError] = useState<string | null>(null);
+
+  const clearCartError = () => setCartError(null);
 
   // 1. Authoritative Backend Cart (Idempotent Get-or-Create)
   const { data: cartResponse, isLoading: isCartLoading } = useQuery({
@@ -142,8 +147,12 @@ export const MockCommerceProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return apiClient.addToCart(targetCartId, productId, quantity);
     },
     onSuccess: () => {
+      setCartError(null);
       queryClient.invalidateQueries({ queryKey: ["active-cart"] });
       queryClient.invalidateQueries({ queryKey: ["active-quote"] });
+    },
+    onError: (err: any) => {
+      setCartError(err?.message || "Failed to add item to cart. Please check inventory.");
     },
   });
 
@@ -153,8 +162,12 @@ export const MockCommerceProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return apiClient.updateCartItemQuantity(cart.id, itemId, quantity);
     },
     onSuccess: () => {
+      setCartError(null);
       queryClient.invalidateQueries({ queryKey: ["active-cart"] });
       queryClient.invalidateQueries({ queryKey: ["active-quote"] });
+    },
+    onError: (err: any) => {
+      setCartError(err?.message || "Failed to update item quantity. Please check inventory.");
     },
   });
 
@@ -164,12 +177,31 @@ export const MockCommerceProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return apiClient.removeCartItem(cart.id, itemId);
     },
     onSuccess: () => {
+      setCartError(null);
       queryClient.invalidateQueries({ queryKey: ["active-cart"] });
       queryClient.invalidateQueries({ queryKey: ["active-quote"] });
+    },
+    onError: (err: any) => {
+      setCartError(err?.message || "Failed to remove item from cart.");
     },
   });
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    if (product.inventory_quantity === 0) {
+      setCartError(`'${product.name}' is currently out of stock.`);
+      setIsCartOpen(true);
+      return;
+    }
+    const existing = cartItems.find((ci) => ci.product_id === product.id);
+    const existingQty = existing ? existing.quantity : 0;
+    if (existingQty + quantity > product.inventory_quantity) {
+      setCartError(
+        `Cannot add ${quantity} more '${product.name}'. Only ${product.inventory_quantity} available in stock.`
+      );
+      setIsCartOpen(true);
+      return;
+    }
+    setCartError(null);
     addMutation.mutate({ productId: product.id, quantity });
     setIsCartOpen(true);
   };
@@ -183,6 +215,13 @@ export const MockCommerceProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const updateQuantity = (productIdOrItemId: string, quantity: number) => {
     const item = cartItems.find((ci) => ci.id === productIdOrItemId || ci.product_id === productIdOrItemId);
     if (!item) return;
+    if (item.product && quantity > item.product.inventory_quantity) {
+      setCartError(
+        `Only ${item.product.inventory_quantity} units of '${item.product.name}' currently available.`
+      );
+      return;
+    }
+    setCartError(null);
     updateQuantityMutation.mutate({ itemId: item.id, quantity });
   };
 
@@ -276,6 +315,8 @@ export const MockCommerceProvider: React.FC<{ children: React.ReactNode }> = ({ 
         cartCount,
         cartSubtotalPaise,
         isCartLoading,
+        cartError,
+        clearCartError,
         isCartOpen,
         setIsCartOpen,
         isAssistantOpen,

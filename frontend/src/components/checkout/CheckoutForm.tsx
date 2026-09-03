@@ -9,6 +9,10 @@ import {
   ArrowRight,
   Sparkles,
   AlertCircle,
+  AlertTriangle,
+  Info,
+  X,
+  RefreshCw,
 } from "lucide-react";
 import { useMockCommerce } from "../../lib/mock/MockCommerceContext";
 import { Button } from "../ui/Button";
@@ -20,18 +24,26 @@ import type { RazorpayOptions } from "../../types/razorpay";
 export const CheckoutForm: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { cartId, cartItems, activeQuote } = useMockCommerce();
+  const { cartId, cartItems, activeQuote, isCartLoading } = useMockCommerce();
 
-  // Form State
-  const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [addressLine, setAddressLine] = useState("");
-  const [city, setCity] = useState("");
-  const [stateName, setStateName] = useState("");
-  const [postalCode, setPostalCode] = useState("");
+  // Revalidate authoritative cart on mount
+  React.useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["active-cart"] });
+    queryClient.invalidateQueries({ queryKey: ["active-quote"] });
+  }, [queryClient]);
+
+  // Form State - Pre-filled with demo recipient for frictionless demo flow
+  const [customerName, setCustomerName] = useState("Aarav Sharma");
+  const [customerEmail, setCustomerEmail] = useState("aarav.running@example.com");
+  const [customerPhone, setCustomerPhone] = useState("+91 98765 43210");
+  const [addressLine, setAddressLine] = useState("42 Indiranagar 100ft Road");
+  const [city, setCity] = useState("Bengaluru");
+  const [stateName, setStateName] = useState("Karnataka");
+  const [postalCode, setPostalCode] = useState("560038");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
+  const [isStaleQuote, setIsStaleQuote] = useState(false);
 
   const fillDemoDetails = () => {
     setCustomerName("Aarav Sharma");
@@ -143,6 +155,7 @@ export const CheckoutForm: React.FC = () => {
         modal: {
           ondismiss: () => {
             setSubmitting(false);
+            setDismissedNotice("Payment window was closed. Your cart and shipping details are preserved — click 'Approve & Pay' whenever you are ready.");
           },
         },
       };
@@ -158,15 +171,32 @@ export const CheckoutForm: React.FC = () => {
       rzp.open();
     } catch (err: any) {
       setSubmitting(false);
-      if (err instanceof ApiErrorClass && err.code === "HTTP_409") {
-        // Stale quote: invalidate active quote to refresh from backend
+      const errMsg = err?.message || "";
+      if (
+        (err instanceof ApiErrorClass && (err.code === "HTTP_409" || err.code === "HTTP_400")) ||
+        errMsg.toLowerCase().includes("quote") ||
+        errMsg.toLowerCase().includes("approved total")
+      ) {
         queryClient.invalidateQueries({ queryKey: ["active-quote"] });
-        setFormError("The product price or inventory changed while reviewing. The authoritative quote has been updated. Please review and re-approve.");
+        setIsStaleQuote(true);
+        setFormError("The authoritative quote changed on the server (price, stock, or policy update). Please refresh quote to review the latest total and re-approve.");
         return;
       }
-      setFormError(err?.message || "Failed to initiate checkout. Please try again.");
+      setFormError(errMsg || "Failed to initiate checkout. Please try again.");
     }
   };
+
+  if (isCartLoading) {
+    return (
+      <div className="bg-surface rounded-2xl border border-border p-12 text-center max-w-md mx-auto space-y-4">
+        <RefreshCw className="w-8 h-8 animate-spin text-accent mx-auto" />
+        <h2 className="text-lg font-bold text-text-primary">Loading Authoritative Cart...</h2>
+        <p className="text-xs text-text-secondary">
+          Synchronizing items and pricing with the warehouse ledger.
+        </p>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -285,10 +315,67 @@ export const CheckoutForm: React.FC = () => {
           </div>
         </div>
 
+        {/* Dismissed Notice */}
+        {dismissedNotice && !formError && (
+          <div className="p-3.5 rounded-xl bg-info-light border border-info/20 text-info-foreground flex items-center justify-between text-xs font-medium animate-in fade-in duration-200">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-info shrink-0" />
+              <span>{dismissedNotice}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDismissedNotice(null)}
+              className="text-text-muted hover:text-text-primary p-0.5 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Error / Stale Quote Banner */}
         {formError && (
-          <div className="p-4 rounded-xl bg-error-light border border-error/20 text-error-foreground flex items-center gap-2 text-xs font-semibold">
-            <AlertCircle className="w-4 h-4 text-error shrink-0" />
-            <span>{formError}</span>
+          <div
+            className={`p-4 rounded-xl flex items-start justify-between gap-3 text-xs font-semibold animate-in fade-in duration-200 ${
+              isStaleQuote
+                ? "bg-warning-light border border-warning/20 text-warning"
+                : "bg-error-light border border-error/20 text-error-foreground"
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              {isStaleQuote ? (
+                <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-error shrink-0 mt-0.5" />
+              )}
+              <div className="space-y-2">
+                <span>{formError}</span>
+                {isStaleQuote && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        queryClient.invalidateQueries({ queryKey: ["active-quote"] });
+                        setFormError(null);
+                        setIsStaleQuote(false);
+                      }}
+                      className="px-3 py-1 rounded-lg bg-warning text-white text-xs font-bold hover:opacity-90 transition cursor-pointer"
+                    >
+                      Refresh Quote & Review Total
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFormError(null);
+                setIsStaleQuote(false);
+              }}
+              className="text-text-muted hover:text-text-primary p-0.5 cursor-pointer shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>

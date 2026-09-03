@@ -1,0 +1,60 @@
+services:
+  - type: web
+    name: runcraft-agentic-commerce-api
+    runtime: python
+    rootDir: backend
+    plan: 0.5c-512mb
+    region: singapore
+    numInstances: 1
+    buildCommand: pip install -e .
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    disk:
+      name: runcraft-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTO_CREATE_TABLES
+        value: "false"
+      - key: DATABASE_URL
+        value: sqlite:////var/data/store.db
+      - key: STATIC_UPLOADS_DIR
+        value: /var/data/uploads
+      - key: MCP_STREAMABLE_HTTP_URL
+        sync: false
+      - key: FRONTEND_PUBLIC_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: AUTH_SECRET_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+  - type: cron
+    name: runcraft-agentic-commerce-health-ping
+    runtime: python
+    rootDir: backend
+    plan: 0.5c-512mb
+    region: singapore
+    schedule: "*/10 * * * *"
+    buildCommand: pip install httpx
+    startCommand: python -c "import os, httpx; r=httpx.get(os.environ['BACKEND_HEALTH_URL'], timeout=20); r.raise_for_status(); print(r.text[:500])"
+    envVars:
+      - key: BACKEND_HEALTH_URL
+        sync: false

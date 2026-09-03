@@ -395,10 +395,59 @@ export type ExternalBuyerChatResponse = {
   provider: "gemini" | "mcp_fallback";
   tool_activity: ToolActivityItem[];
   mcp_calls: MCPToolCallRecord[];
-  recommendations: any[];
+  recommendations?: any[];
   cart_id?: string;
   quote?: Quote;
   approval_required: boolean;
+};
+
+export type CrossSellPerformanceItem = {
+  trigger_category: string;
+  recommend_category: string;
+  matches_count: number;
+};
+
+export type ChannelPerformanceItem = {
+  channel: "direct_storefront" | "in_app_agent" | "external_ai";
+  channel_label: string;
+  orders_count: number;
+  revenue_paise: number;
+  revenue_inr: number;
+  share_percentage: number;
+};
+
+export type DailyTrendItem = {
+  date: string;
+  orders_count: number;
+  revenue_inr: number;
+  ai_sessions_count: number;
+};
+
+export type AdminAnalytics = {
+  gross_revenue_paise: number;
+  gross_revenue_inr: number;
+  confirmed_orders_count: number;
+  active_skus_count: number;
+  aov_paise: number;
+  aov_inr: number;
+  total_carts_created: number;
+  carts_with_items_count: number;
+  converted_carts_count: number;
+  abandoned_carts_count: number;
+  cart_to_order_conversion_rate: number;
+  overall_conversion_rate: number;
+  in_app_agent_turns_count: number;
+  in_app_agent_sessions_count: number;
+  external_ai_tool_calls_count: number;
+  external_ai_sessions_count: number;
+  total_ai_sessions_count: number;
+  cross_sell_eligible_orders_count: number;
+  cross_sell_accepted_orders_count: number;
+  cross_sell_acceptance_rate: number;
+  cross_sell_rules_summary: CrossSellPerformanceItem[];
+  channel_breakdown: ChannelPerformanceItem[];
+  daily_trends: DailyTrendItem[];
+  days_window?: number | null;
 };
 
 

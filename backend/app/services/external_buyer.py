@@ -58,12 +58,12 @@ class ExternalBuyerService:
         app_instance: Any,
     ) -> ExternalBuyerChatResponse:
         """Connect as an MCP client over Streamable HTTP and execute the buyer turn."""
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app_instance),
-            base_url="http://localhost:8000",
-        ) as http_client:
+        mcp_url = settings.MCP_STREAMABLE_HTTP_URL
+        is_local_mcp_url = mcp_url.startswith("http://localhost") or mcp_url.startswith("http://127.0.0.1")
+        transport = httpx.ASGITransport(app=app_instance) if is_local_mcp_url else None
+        async with httpx.AsyncClient(transport=transport) as http_client:
             async with streamable_http_client(
-                "http://localhost:8000/mcp/",
+                mcp_url,
                 http_client=http_client,
             ) as (read_stream, write_stream):
                 async with ClientSession(read_stream, write_stream) as mcp_session:
@@ -393,7 +393,19 @@ class ExternalBuyerService:
             if shoes:
                 chosen_shoe = None
                 for s in shoes:
-                    if "beginner" in msg_lower or "daily trainer" in s["name"].lower():
+                    product_text = " ".join([
+                        s.get("name", ""),
+                        s.get("category", ""),
+                        s.get("short_description", ""),
+                    ]).lower()
+                    if "beginner" in msg_lower and (
+                        "daily trainer" in product_text
+                        or "beginner" in product_text
+                        or "budget" in product_text
+                    ):
+                        chosen_shoe = s
+                        break
+                    if "daily trainer" in product_text:
                         chosen_shoe = s
                         break
                 if not chosen_shoe:

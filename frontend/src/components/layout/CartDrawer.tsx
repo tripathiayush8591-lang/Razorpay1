@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, AlertTriangle } from "lucide-react";
+import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, AlertTriangle, AlertCircle } from "lucide-react";
 import { useMockCommerce } from "../../lib/mock/MockCommerceContext";
 import { Button } from "../ui/Button";
 import { resolveImageUrl } from "../../lib/api/client";
@@ -13,6 +13,8 @@ export const CartDrawer: React.FC = () => {
     updateQuantity,
     removeFromCart,
     activeQuote,
+    cartError,
+    clearCartError,
   } = useMockCommerce();
 
   const navigate = useNavigate();
@@ -57,6 +59,23 @@ export const CartDrawer: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Cart Error Banner */}
+          {cartError && (
+            <div className="mx-6 mt-4 p-3 rounded-xl bg-error-light border border-error/20 flex items-start justify-between gap-2 text-xs text-error-foreground font-medium animate-in fade-in duration-200">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-error" />
+                <span>{cartError}</span>
+              </div>
+              <button
+                onClick={clearCartError}
+                className="p-0.5 text-text-muted hover:text-text-primary shrink-0 cursor-pointer"
+                aria-label="Dismiss error"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -123,6 +142,18 @@ export const CartDrawer: React.FC = () => {
                           <p className="text-[11px] font-mono text-text-muted mt-0.5">
                             {product?.sku || item.product_id}
                           </p>
+                          {product && product.inventory_quantity === 0 && (
+                            <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-error bg-error-light px-2 py-0.5 rounded border border-error/20">
+                              <AlertCircle className="w-3 h-3" />
+                              <span>Out of stock</span>
+                            </div>
+                          )}
+                          {product && product.inventory_quantity > 0 && product.inventory_quantity < item.quantity && (
+                            <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-warning bg-warning-light px-2 py-0.5 rounded border border-warning/20">
+                              <AlertTriangle className="w-3 h-3" />
+                              <span>Only {product.inventory_quantity} available</span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between mt-2">
@@ -201,10 +232,17 @@ export const CartDrawer: React.FC = () => {
 
               {/* Actions */}
               <div className="pt-2 space-y-2">
+                {cartItems.some((it) => it.product && it.product.inventory_quantity === 0) && (
+                  <div className="p-2.5 rounded-xl bg-error-light border border-error/20 text-xs text-error-foreground font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-error" />
+                    <span>Please remove out-of-stock items to checkout.</span>
+                  </div>
+                )}
                 <Button
                   variant="primary"
                   size="md"
                   className="w-full justify-between"
+                  disabled={cartItems.some((it) => it.product && it.product.inventory_quantity === 0)}
                   onClick={handleCheckout}
                 >
                   <span>Review & Checkout</span>
