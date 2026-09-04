@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag, Sparkles, Shield, Compass, Search, Bot, Menu, X, Package } from "lucide-react";
+import { ShoppingBag, Sparkles, Shield, Compass, Search, Bot, Menu, X, Package, HelpCircle } from "lucide-react";
 import { useMockCommerce } from "../../lib/mock/MockCommerceContext";
+import SupportModal from "../storefront/SupportModal";
 
 export const StorefrontHeader: React.FC = () => {
-  const { cartCount, setIsCartOpen } = useMockCommerce();
+  const { cartCount, setIsCartOpen, setIsAssistantOpen } = useMockCommerce();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   // Close mobile menu whenever the route changes
   useEffect(() => {
@@ -15,9 +17,9 @@ export const StorefrontHeader: React.FC = () => {
 
   const navLinks = [
     { label: "Shop", path: "/shop", icon: <Compass className="w-4 h-4" /> },
-    { label: "AI Assistant", path: "/assistant", icon: <Sparkles className="w-4 h-4 text-accent" /> },
-    { label: "AI Buyer (MCP)", path: "/external-buyer", icon: <Bot className="w-4 h-4 text-accent" /> },
+    { label: "Shop with Pace", path: "/assistant", icon: <Sparkles className="w-4 h-4 text-accent" /> },
     { label: "Track Orders", path: "/orders", icon: <Package className="w-4 h-4" /> },
+    { label: "External AI (MCP)", path: "/external-buyer", icon: <Bot className="w-4 h-4 text-accent" /> },
   ];
 
   return (
@@ -63,6 +65,16 @@ export const StorefrontHeader: React.FC = () => {
 
         {/* Right side controls */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Need Help trigger */}
+          <button
+            onClick={() => setSupportOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition cursor-pointer"
+            title="Need help or have questions?"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-text-muted" />
+            <span>Help</span>
+          </button>
+
           {/* Demo Merchant Switch */}
           <Link
             to="/admin/dashboard"
@@ -132,6 +144,18 @@ export const StorefrontHeader: React.FC = () => {
                 </Link>
               );
             })}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setSupportOpen(true);
+              }}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <HelpCircle className="w-4 h-4 text-accent" />
+                <span>Help & Support</span>
+              </div>
+            </button>
           </nav>
 
           <div className="pt-3 border-t border-border flex items-center justify-between">
@@ -157,6 +181,13 @@ export const StorefrontHeader: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Support / Help Modal */}
+      <SupportModal
+        isOpen={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
+      />
     </header>
   );
 };

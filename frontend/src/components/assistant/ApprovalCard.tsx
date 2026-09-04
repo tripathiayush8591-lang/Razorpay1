@@ -33,11 +33,11 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ quote, onApprove }) 
             <ShieldCheck className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs font-bold text-text-primary uppercase tracking-wide">
-            Authoritative Purchase Quote
+            Your Recommended Kit
           </span>
         </div>
-        <span className="text-[10px] font-medium text-text-muted bg-surface-secondary px-2 py-0.5 rounded-full border border-border">
-          Step: User Approval Required
+        <span className="text-[10px] font-medium text-text-secondary bg-surface-secondary px-2 py-0.5 rounded-full border border-border">
+          Review Before You Pay
         </span>
       </div>
 
@@ -63,7 +63,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ quote, onApprove }) 
         </div>
         {quote.discount_paise > 0 && (
           <div className="flex justify-between text-success font-medium">
-            <span>Special AI Kit Discount</span>
+            <span>Special Kit Discount</span>
             <span>-₹{(quote.discount_paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
           </div>
         )}
@@ -78,7 +78,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ quote, onApprove }) 
           </span>
         </div>
         <div className="pt-2 border-t border-border flex justify-between items-baseline">
-          <span className="text-xs font-bold text-text-primary">Authoritative Total</span>
+          <span className="text-xs font-bold text-text-primary">Total</span>
           <span className="text-base font-extrabold text-accent">
             ₹{(quote.total_paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </span>
@@ -100,7 +100,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ quote, onApprove }) 
           <ArrowRight className="w-4 h-4" />
         </Button>
         <p className="text-[10px] text-text-secondary text-center mt-2">
-          By approving, you authorize the creation of a secure Razorpay test order.
+          Your order won't be placed until you approve it. Review your total before proceeding to payment.
         </p>
       </div>
     </div>

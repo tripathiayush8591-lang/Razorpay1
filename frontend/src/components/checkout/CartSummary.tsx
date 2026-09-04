@@ -224,7 +224,7 @@ export const CartSummary: React.FC = () => {
         </div>
 
         <div className="pt-3 border-t border-border text-[10px] text-text-muted text-center leading-relaxed">
-          Price and inventory remain locked during checkout. Requires explicit human authorization prior to payment.
+          Review your order before you pay. Your order won't be placed until you approve it.
         </div>
       </div>
     </div>

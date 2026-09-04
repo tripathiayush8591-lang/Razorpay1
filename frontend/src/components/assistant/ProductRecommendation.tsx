@@ -25,6 +25,29 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({
   const cart = cartData?.data;
   const isInCart = cart?.items.some((item) => item.product_id === product.id) ?? false;
 
+  // Lightweight recommendation feedback state (stored in localStorage)
+  const [feedback, setFeedback] = React.useState<"helpful" | "not_helpful" | null>(() => {
+    try {
+      return (localStorage.getItem(`runcraft_fb_${product.id}`) as any) || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleFeedback = (val: "helpful" | "not_helpful") => {
+    const nextVal = feedback === val ? null : val;
+    setFeedback(nextVal);
+    try {
+      if (nextVal) {
+        localStorage.setItem(`runcraft_fb_${product.id}`, nextVal);
+      } else {
+        localStorage.removeItem(`runcraft_fb_${product.id}`);
+      }
+    } catch {
+      // ignore storage exceptions
+    }
+  };
+
   // Real backend cart mutation
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -100,6 +123,42 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({
           >
             {addMutation.isPending ? "Adding..." : isInCart ? "In Cart" : "Add to Cart"}
           </Button>
+        </div>
+
+        {/* Lightweight Feedback: Helpful / Not helpful */}
+        <div className="mt-2 pt-1.5 border-t border-border/60 flex items-center justify-between text-[11px] text-text-secondary">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-text-muted">Recommendation:</span>
+            <button
+              onClick={() => handleFeedback("helpful")}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition cursor-pointer ${
+                feedback === "helpful"
+                  ? "bg-success-light text-success font-bold"
+                  : "hover:bg-surface-secondary text-text-secondary"
+              }`}
+              title="Helpful recommendation"
+              aria-label="Helpful"
+            >
+              <span>👍</span>
+              <span>Helpful</span>
+            </button>
+            <button
+              onClick={() => handleFeedback("not_helpful")}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition cursor-pointer ${
+                feedback === "not_helpful"
+                  ? "bg-surface-secondary text-text-dark font-bold"
+                  : "hover:bg-surface-secondary text-text-secondary"
+              }`}
+              title="Not helpful recommendation"
+              aria-label="Not helpful"
+            >
+              <span>👎</span>
+              <span>Not helpful</span>
+            </button>
+          </div>
+          {feedback && (
+            <span className="text-[9px] text-success font-medium italic">Thanks!</span>
+          )}
         </div>
       </div>
     </div>

@@ -63,9 +63,9 @@ export const OrderDetailPage: React.FC = () => {
     return (
       <div className="bg-surface rounded-2xl border border-border p-12 text-center max-w-md mx-auto space-y-4 my-8">
         <AlertCircle className="w-10 h-10 text-error mx-auto" />
-        <h2 className="text-base font-bold text-text-primary">Order Not Found or Restricted</h2>
-        <p className="text-xs text-text-secondary">
-          This order does not belong to your active guest session or does not exist.
+        <h2 className="text-base font-bold text-text-primary">We couldn't access that order</h2>
+        <p className="text-xs text-text-secondary leading-relaxed">
+          This order could not be located or does not belong to your active shopping session.
         </p>
         <div className="pt-2">
           <Link to="/orders">

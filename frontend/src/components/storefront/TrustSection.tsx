@@ -5,27 +5,27 @@ export const TrustSection: React.FC = () => {
   const pillars = [
     {
       icon: <Database className="w-5 h-5 text-accent" />,
-      title: "Zero LLM Hallucination on Price & Stock",
+      title: "Accurate Pricing & Real Stock",
       description:
-        "The model never invents inventory or discounts. Every SKU, quantity, and rupee total originates from our authoritative SQLite database.",
+        "What you see is what is in our warehouse. Real-time inventory checks ensure you never pay for an out-of-stock product.",
     },
     {
       icon: <Lock className="w-5 h-5 text-success" />,
-      title: "Human Approval Required Before Charging",
+      title: "You Approve Before You Pay",
       description:
-        "AI agents cannot autonomously charge cards. Shoppers inspect an immutable final quote and explicitly authorize payment.",
+        "No surprise charges. You always review and approve your complete item list and delivery details before any payment.",
     },
     {
       icon: <ShieldCheck className="w-5 h-5 text-info" />,
-      title: "Razorpay Test Mode Payment Pipeline",
+      title: "Secure, Verified Checkout",
       description:
-        "Payments are verified server-side with HMAC-SHA256 signature verification and idempotent webhook handlers to prevent duplicate orders.",
+        "Fast, reliable payments powered by Razorpay with instant order confirmation and live shipment tracking.",
     },
     {
       icon: <Cpu className="w-5 h-5 text-warning" />,
-      title: "Universal MCP Adapter Parity",
+      title: "Shop Your Way",
       description:
-        "External AI Buyers connecting through MCP use the exact same commerce services and quote rules as human shoppers in the storefront.",
+        "Browse our catalog normally, build kits with Pace, or connect via AI shopping assistants with consistent pricing across all channels.",
     },
   ];
 
@@ -37,11 +37,10 @@ export const TrustSection: React.FC = () => {
             Built for Real-World Trust
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-1">
-            Why Agentic Commerce Requires Guardrails
+            Why Runners Trust RunCraft
           </h2>
           <p className="text-xs sm:text-sm text-text-secondary mt-2">
-            Most AI commerce demos fall apart when prices change or stocks run out. 
-            RunCraft uses a decoupled architecture where backend rules govern every transaction.
+            Modern performance running equipment backed by real-time inventory, transparent pricing, and shopper-first checkout.
           </p>
         </div>
 

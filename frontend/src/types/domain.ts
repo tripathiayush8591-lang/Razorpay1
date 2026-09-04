@@ -351,6 +351,19 @@ export type AgentChatRequest = {
   history?: ChatMessageTurn[];
 };
 
+export type AgentOrderStatusSnapshot = {
+  order_id: string;
+  status: string;
+  amount_paise: number;
+  currency?: string;
+  carrier?: string;
+  tracking_number?: string;
+  customer_name?: string;
+  created_at?: string;
+  items_count?: number;
+  items_summary?: string;
+};
+
 export type AgentChatResponse = {
   message: string;
   tool_activity: ToolActivityItem[];
@@ -358,6 +371,7 @@ export type AgentChatResponse = {
   cart?: Cart;
   quote?: Quote;
   approval_required: boolean;
+  order_status?: AgentOrderStatusSnapshot;
 };
 
 export type MCPToolSchemaInfo = {

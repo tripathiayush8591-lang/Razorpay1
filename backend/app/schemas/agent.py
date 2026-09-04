@@ -29,6 +29,19 @@ class AgentChatRequest(BaseModel):
     history: List[ChatMessageTurn] = Field(default_factory=list, description="Recent conversation history")
 
 
+class AgentOrderStatusSnapshot(BaseModel):
+    order_id: str
+    status: str
+    amount_paise: int
+    currency: str = "INR"
+    carrier: Optional[str] = None
+    tracking_number: Optional[str] = None
+    customer_name: Optional[str] = None
+    created_at: Optional[str] = None
+    items_count: int = 0
+    items_summary: Optional[str] = None
+
+
 class AgentChatResponse(BaseModel):
     message: str
     tool_activity: List[ToolActivityItem] = Field(default_factory=list)
@@ -36,6 +49,7 @@ class AgentChatResponse(BaseModel):
     cart: Optional[CartResponse] = None
     quote: Optional[QuoteResponse] = None
     approval_required: bool = False
+    order_status: Optional[AgentOrderStatusSnapshot] = None
 
 
 # Direct Tool Request Schemas

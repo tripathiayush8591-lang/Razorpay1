@@ -1,9 +1,10 @@
 import React from "react";
 import { Bot, User } from "lucide-react";
-import type { Product, Quote } from "../../types/domain";
+import type { Product, Quote, AgentOrderStatusSnapshot } from "../../types/domain";
 import ToolActivity from "./ToolActivity";
 import ProductRecommendation from "./ProductRecommendation";
 import ApprovalCard from "./ApprovalCard";
+import OrderStatusCard from "./OrderStatusCard";
 
 export interface MessageData {
   id: string;
@@ -12,6 +13,7 @@ export interface MessageData {
   toolActivity?: { activity: string; status: "running" | "completed" | "failed"; details?: string }[];
   recommendations?: { product: Product; reason?: string }[];
   approvalQuote?: Quote;
+  orderStatus?: AgentOrderStatusSnapshot;
   timestamp: string;
 }
 
@@ -80,6 +82,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, onApproveQuot
         {message.approvalQuote && (
           <div className="pt-1 w-full">
             <ApprovalCard quote={message.approvalQuote} onApprove={onApproveQuote} />
+          </div>
+        )}
+
+        {/* Live Order Status Card */}
+        {message.orderStatus && (
+          <div className="pt-1 w-full">
+            <OrderStatusCard order={message.orderStatus} />
           </div>
         )}
 

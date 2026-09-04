@@ -354,3 +354,98 @@ def test_agent_direct_tools_endpoints():
     )
     assert r_res.status_code == 200
     assert len(r_res.json()["data"]["items"]) == 0
+
+
+def test_agent_chat_where_is_my_order_intent():
+    """Verify in-app agent authoritatively checks order status for current session."""
+    session_id = f"test_order_intent_{uuid.uuid4().hex[:8]}"
+
+    # 1. No orders placed yet
+    res = client.post(
+        "/api/agent/chat",
+        headers={"X-Session-ID": session_id},
+        json={
+            "message": "Where is my order?",
+            "session_id": session_id,
+        },
+    )
+    assert res.status_code == 200
+    data = res.json()["data"]
+    assert "couldn't find an order" in data["message"].lower() or "track orders" in data["message"].lower()
+
+    # 2. Seed an order for this session
+    from datetime import datetime, timezone
+    from app.models.cart import Cart
+    from app.db.seed import DEMO_MERCHANT_ID
+    order_id = f"ord_intent_{uuid.uuid4().hex[:8]}"
+    cart_id = f"cart_intent_{uuid.uuid4().hex[:8]}"
+
+    with SessionLocal() as db:
+        test_cart = Cart(
+            id=cart_id,
+            merchant_id=DEMO_MERCHANT_ID,
+            session_id=session_id,
+            status="converted",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        test_order = MerchantOrder(
+            id=order_id,
+            merchant_id=DEMO_MERCHANT_ID,
+            cart_id=cart_id,
+            customer_name="Aarav Mehta",
+            customer_email="aarav@example.com",
+            customer_phone="+919876543210",
+            shipping_address_json="{}",
+            items_snapshot_json="[]",
+            amount_paise=619800,
+            currency="INR",
+            status="SHIPPED",
+            carrier="RunCraft Express",
+            tracking_number="BLR-47653",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        db.add(test_cart)
+        db.add(test_order)
+        db.commit()
+
+    try:
+        res2 = client.post(
+            "/api/agent/chat",
+            headers={"X-Session-ID": session_id},
+            json={
+                "message": "Track my order please",
+                "session_id": session_id,
+            },
+        )
+        assert res2.status_code == 200
+        data2 = res2.json()["data"]
+        msg2 = data2["message"]
+        assert "shipped" in msg2.lower()
+        assert "runcraft express" in msg2.lower()
+        assert "BLR-47653" in msg2
+        assert data2.get("order_status") is not None
+        assert data2["order_status"]["order_id"] == order_id
+        assert data2["order_status"]["status"] == "SHIPPED"
+        assert data2["order_status"]["tracking_number"] == "BLR-47653"
+
+        # 3. Explicit "tell me my order status" test query
+        res3 = client.post(
+            "/api/agent/chat",
+            headers={"X-Session-ID": session_id},
+            json={
+                "message": "tell me my order status",
+                "session_id": session_id,
+            },
+        )
+        assert res3.status_code == 200
+        data3 = res3.json()["data"]
+        assert data3.get("order_status") is not None
+        assert data3["order_status"]["order_id"] == order_id
+        assert data3["order_status"]["status"] == "SHIPPED"
+    finally:
+        with SessionLocal() as db:
+            db.query(MerchantOrder).filter(MerchantOrder.id == order_id).delete(synchronize_session=False)
+            db.query(Cart).filter(Cart.id == cart_id).delete(synchronize_session=False)
+            db.commit()

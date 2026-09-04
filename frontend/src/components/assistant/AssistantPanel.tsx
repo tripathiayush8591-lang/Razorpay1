@@ -3,7 +3,7 @@ import { Send, Sparkles, RefreshCw, X, Maximize2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import ChatMessage, { MessageData } from "./ChatMessage";
-import { apiClient } from "../../lib/api/client";
+import { apiClient, toCustomerFriendlyError } from "../../lib/api/client";
 import { getOrCreateGuestSessionId } from "../../lib/session";
 
 export interface AssistantPanelProps {
@@ -32,7 +32,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
       id: "msg_welcome",
       sender: "assistant",
       content:
-        "Hello! I am your RunCraft AI Commerce Assistant. I can search our live catalog, verify real inventory, assemble gear kits, and prepare an authoritative quote for you.",
+        "Hi! I'm Pace, your RunCraft shopping assistant. Tell me what you're looking for and I'll help you find the right gear.",
       timestamp: "Just now",
     },
   ]);
@@ -42,6 +42,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
   const quickPrompts = [
     "Build a beginner running kit under ₹8,000",
     "Find race day carbon plate shoes",
+    "Where is my order?",
     "Add hydration flask",
   ];
 
@@ -93,6 +94,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
         toolActivity: data.tool_activity,
         recommendations: data.recommendations,
         approvalQuote: data.quote || undefined,
+        orderStatus: data.order_status || undefined,
         timestamp: "Just now",
       };
 
@@ -102,9 +104,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
       const errMsg: MessageData = {
         id: `msg_err_${Date.now()}`,
         sender: "assistant",
-        content:
-          err?.message ||
-          "I encountered an unexpected issue while consulting the commerce services. Please try again.",
+        content: toCustomerFriendlyError(err),
         timestamp: "Just now",
       };
       setMessages((prev) => [...prev, errMsg]);
@@ -150,10 +150,10 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
           </div>
           <div>
             <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5">
-              RunCraft AI Assistant
+              Pace
               <span className="w-2 h-2 rounded-full bg-success inline-block animate-pulse" />
             </h3>
-            <p className="text-[10px] text-text-secondary">Authoritative Commerce Agent</p>
+            <p className="text-[10px] text-text-secondary">RunCraft Shopping Assistant</p>
           </div>
         </div>
 
@@ -193,7 +193,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
         {chatMutation.isPending && (
           <div className="flex items-center gap-2 text-text-secondary text-xs p-3 bg-surface-secondary/50 rounded-xl border border-border">
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-accent" />
-            <span>Consulting live catalog & inventory services...</span>
+            <span>Pace is checking the catalog & inventory...</span>
           </div>
         )}
 
@@ -221,7 +221,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Ask for running shoes, beginner kits, or advice..."
+          placeholder="Ask Pace for running shoes, gear kits, or order tracking..."
           disabled={chatMutation.isPending}
           className="flex-1 bg-surface-secondary text-text-primary text-xs rounded-xl px-3 py-2.5 border border-border focus:outline-hidden focus:border-accent focus:ring-1 focus:ring-accent placeholder:text-text-muted"
         />

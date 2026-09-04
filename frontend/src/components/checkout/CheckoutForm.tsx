@@ -17,7 +17,7 @@ import {
 import { useMockCommerce } from "../../lib/mock/MockCommerceContext";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
-import { apiClient, ApiErrorClass } from "../../lib/api/client";
+import { apiClient, ApiErrorClass, toCustomerFriendlyError } from "../../lib/api/client";
 import { loadRazorpayScript } from "../../lib/razorpay";
 import type { RazorpayOptions } from "../../types/razorpay";
 
@@ -179,10 +179,10 @@ export const CheckoutForm: React.FC = () => {
       ) {
         queryClient.invalidateQueries({ queryKey: ["active-quote"] });
         setIsStaleQuote(true);
-        setFormError("The authoritative quote changed on the server (price, stock, or policy update). Please refresh quote to review the latest total and re-approve.");
+        setFormError("Your cart price changed. Please review the updated total before continuing.");
         return;
       }
-      setFormError(errMsg || "Failed to initiate checkout. Please try again.");
+      setFormError(toCustomerFriendlyError(err));
     }
   };
 
@@ -387,11 +387,11 @@ export const CheckoutForm: React.FC = () => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-accent" />
             <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-              3. Authoritative Quote & Approval
+              3. Review & Approve Order
             </h3>
           </div>
           <span className="text-[10px] font-semibold text-accent bg-accent-light px-2 py-0.5 rounded-full">
-            Explicit Consent
+            Review & Confirm
           </span>
         </div>
 
@@ -435,7 +435,7 @@ export const CheckoutForm: React.FC = () => {
           </div>
 
           <div className="pt-3 border-t border-border flex justify-between items-baseline">
-            <span className="text-sm font-extrabold text-text-primary">Grand Authoritative Total</span>
+            <span className="text-sm font-extrabold text-text-primary">Final Order Total</span>
             <span className="text-2xl font-black text-accent">
               ₹{(activeQuote.total_paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </span>
@@ -459,14 +459,14 @@ export const CheckoutForm: React.FC = () => {
           </Button>
 
           <p className="text-[11px] text-text-secondary text-center leading-relaxed">
-            By approving, you authorize the secure creation of a Razorpay Standard Checkout order.
+            Your order won't be placed until you approve it. Review your total before proceeding to secure payment.
           </p>
         </div>
 
         {/* Security / Guardrail pill */}
         <div className="p-3 rounded-xl bg-surface-secondary border border-border flex items-center gap-2 text-[11px] text-text-muted">
           <ShieldCheck className="w-4 h-4 text-success shrink-0" />
-          <span>Guaranteed by Merchant Policy: Official Razorpay Web Modal • Zero Autonomous Agent Charges</span>
+          <span>Review your order before you pay • Verified checkout powered by Razorpay</span>
         </div>
       </div>
     </form>

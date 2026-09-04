@@ -566,13 +566,13 @@ export const ExternalBuyerPage: React.FC = () => {
           <div className="bg-surface rounded-2xl border-2 border-accent/40 p-6 shadow-sm space-y-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider flex items-center gap-1">
               <Lock className="w-3 h-3" />
-              Human Boundary
+              Customer Approval
             </div>
 
             <div>
               <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-accent" />
-                Explicit Purchase Authorization
+                Review & Approve Order
               </h2>
               <p className="text-xs text-text-secondary mt-1">
                 Authoritative quote generated via MCP <code className="text-accent">get_final_quote()</code>.
@@ -712,10 +712,10 @@ export const ExternalBuyerPage: React.FC = () => {
                   >
                     {runningWorkflow
                       ? "Processing Payment..."
-                      : `Explicitly Approve & Pay ₹${(quoteData.total_paise / 100).toLocaleString("en-IN")}`}
+                      : `Approve & Pay ₹${(quoteData.total_paise / 100).toLocaleString("en-IN")}`}
                   </Button>
                   <p className="text-[10px] text-center text-text-muted mt-2">
-                    External AI cannot initiate transactions. Human authorization required.
+                    Review your order before you pay. Your order won't be placed until you approve it.
                   </p>
                 </div>
               </div>

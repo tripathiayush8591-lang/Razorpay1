@@ -29,10 +29,10 @@ export const FeaturedProducts: React.FC = () => {
             Curated Gear
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-1">
-            Featured Performance SKUs
+            Featured Products
           </h2>
           <p className="text-xs sm:text-sm text-text-secondary mt-1">
-            Engineered for endurance runners and backed by live inventory in our merchant database.
+            Engineered for endurance runners and backed by verified warehouse stock.
           </p>
         </div>
 

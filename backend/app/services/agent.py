@@ -58,6 +58,52 @@ def process_agent_chat(
         response = run_deterministic_fallback(executor=executor, message=message, history=history)
         provider_used = "fallback"
 
+    # Ensure order status is authoritatively attached if queried or tool was invoked
+    order_status_triggers = [
+        "order status", "status of my order", "where is my order", "where's my order",
+        "track my order", "track order", "track my package", "track package", "where is my package",
+        "tell me my order status", "tell me the status of my order", "show my order",
+        "my order status", "check my order", "order tracking", "order update", "check order"
+    ]
+    is_order_status_query = any(t in message.lower() for t in order_status_triggers) or (
+        ("order" in message.lower() or "package" in message.lower()) and any(w in message.lower() for w in ["status", "track", "where", "tell me", "check"])
+    )
+
+    if is_order_status_query and response and not response.order_status:
+        info = executor.get_order_status()
+        if info.get("has_orders"):
+            from app.schemas.agent import AgentOrderStatusSnapshot
+            response.order_status = AgentOrderStatusSnapshot(
+                order_id=info["order_id"],
+                status=info["status"],
+                amount_paise=info.get("amount_paise", 0),
+                currency="INR",
+                carrier=info.get("carrier"),
+                tracking_number=info.get("tracking_number"),
+                customer_name=info.get("customer_name"),
+                created_at=info.get("created_at"),
+                items_count=info.get("items_count", 0),
+                items_summary=info.get("items_summary"),
+            )
+            if "order #" not in response.message.lower() and "status:" not in response.message.lower() and "status is" not in response.message.lower():
+                amount_str = f"₹{(info.get('amount_paise', 0) / 100):,.2f}"
+                response.message += f"\n\nHere is your latest order #{info['order_id']} ({amount_str}): Status is **{info['status']}**."
+    elif response and not response.order_status and getattr(executor, "latest_order_info", None) and executor.latest_order_info.get("has_orders"):
+        from app.schemas.agent import AgentOrderStatusSnapshot
+        info = executor.latest_order_info
+        response.order_status = AgentOrderStatusSnapshot(
+            order_id=info["order_id"],
+            status=info["status"],
+            amount_paise=info.get("amount_paise", 0),
+            currency="INR",
+            carrier=info.get("carrier"),
+            tracking_number=info.get("tracking_number"),
+            customer_name=info.get("customer_name"),
+            created_at=info.get("created_at"),
+            items_count=info.get("items_count", 0),
+            items_summary=info.get("items_summary"),
+        )
+
     # Record authoritative audit event for this agent turn
     try:
         quote_total = response.quote.total_paise if response.quote else 0

@@ -18,15 +18,17 @@ from app.services.cart import get_cart_by_id
 logger = logging.getLogger(__name__)
 
 SYSTEM_INSTRUCTION = """
-You are the RunCraft AI Commerce Assistant for an athletic footwear and apparel merchant.
-Your mission is to help shoppers find products, check live inventory, assemble gear kits, and prepare authoritative quotes.
+You are Pace, the friendly RunCraft shopping assistant for a premium athletic running brand.
+Your mission is to help shoppers find running shoes and apparel, check live inventory, assemble gear kits, track orders, and prepare authoritative quotes.
 
 CRITICAL RULES:
-1. You must NEVER fabricate or hallucinate prices, inventory quantities, delivery fees, or discounts.
-2. All product details, stock levels, and quotes MUST come directly from tool responses.
+1. You must NEVER fabricate or hallucinate prices, inventory quantities, delivery fees, discounts, or order tracking statuses.
+2. All product details, stock levels, quotes, and order statuses MUST come directly from tool responses.
 3. User budget constraints are HARD upper limits. Never exceed the user's budget.
-4. Stop before payment: when a package or cart is ready for purchase, inform the user that their authoritative quote is ready for their explicit approval.
-5. Keep your tone professional, concise, and helpful.
+4. Stop before payment: when a package or cart is ready for purchase, inform the user that their quote is ready for their explicit approval.
+5. If the user asks for non-running items (like laptops, gaming, electronics, tennis rackets, etc.), politely explain that RunCraft specializes exclusively in running shoes, athletic apparel, and accessories, and guide them back to running gear.
+6. When the user asks about order status or package tracking ("where is my order", "track my order", "where's my package"), call get_order_status. If an order exists, report its real fulfillment status and tracking number (e.g. "Your order is currently shipped with RunCraft Express. Tracking number: BLR-47653."). If no order exists, say: "I couldn't find an order in this session. You can check Track Orders to view your orders."
+7. Keep your tone conversational, warm, concise, and helpful.
 """
 
 
@@ -117,6 +119,10 @@ def run_gemini_turn(
             "warnings": quote.warnings,
         }
 
+    def get_order_status() -> Dict[str, Any]:
+        """Retrieve real order status and package tracking for the current shopper."""
+        return executor.get_order_status()
+
     tool_dispatch = {
         "search_products": search_products,
         "check_inventory": check_inventory,
@@ -124,6 +130,7 @@ def run_gemini_turn(
         "add_to_cart": add_to_cart,
         "remove_from_cart": remove_from_cart,
         "get_final_quote": get_final_quote,
+        "get_order_status": get_order_status,
     }
 
     tools_list = [
@@ -133,6 +140,7 @@ def run_gemini_turn(
         add_to_cart,
         remove_from_cart,
         get_final_quote,
+        get_order_status,
     ]
 
     # Assemble conversation contents for the Gemini SDK

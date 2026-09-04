@@ -33,17 +33,24 @@ export const AppShell: React.FC = () => {
             <AssistantPanel onClose={() => setIsAssistantOpen(false)} />
           </div>
         ) : (
-          <button
-            onClick={() => setIsAssistantOpen(true)}
-            className="group inline-flex items-center gap-2.5 px-4 py-3 rounded-full bg-accent text-accent-foreground shadow-lg hover:bg-accent-dark hover:scale-105 active:scale-95 transition duration-200 cursor-pointer border border-surface/20"
-            aria-label="Open AI Shopping Assistant"
-          >
-            <div className="relative">
-              <Sparkles className="w-5 h-5 group-hover:rotate-12 transition duration-200" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-success rounded-full ring-2 ring-accent" />
-            </div>
-            <span className="text-xs font-semibold tracking-wide pr-1">Shop with AI</span>
-          </button>
+          <div className="relative group">
+            {/* Subtle glow / pulse treatment using existing design tokens */}
+            <span
+              className="absolute -inset-1 rounded-full bg-accent opacity-25 blur-xs motion-safe:animate-pulse -z-10 group-hover:opacity-40 transition"
+              aria-hidden="true"
+            />
+            <button
+              onClick={() => setIsAssistantOpen(true)}
+              className="inline-flex items-center gap-2.5 px-4 py-3 rounded-full bg-accent text-accent-foreground shadow-lg hover:bg-accent-dark hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus:outline-hidden transition duration-200 cursor-pointer border border-surface/20"
+              aria-label="Shop with Pace, your AI shopping assistant"
+            >
+              <div className="relative">
+                <Sparkles className="w-5 h-5 group-hover:rotate-12 transition duration-200" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-success rounded-full ring-2 ring-accent" />
+              </div>
+              <span className="text-xs font-semibold tracking-wide pr-1">Shop with AI</span>
+            </button>
+          </div>
         )}
       </div>
     </div>

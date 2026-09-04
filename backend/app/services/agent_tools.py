@@ -20,6 +20,7 @@ class AgentToolExecutor:
         self.session_id = session_id
         self.cart_id = cart_id
         self.activities: List[ToolActivityItem] = []
+        self.latest_order_info: Optional[Dict[str, Any]] = None
 
     def search_products(
         self,
@@ -243,3 +244,65 @@ class AgentToolExecutor:
                 )
             )
             raise e
+
+    def get_order_status(self) -> Dict[str, Any]:
+        """Retrieve authoritative order status for the current guest session."""
+        try:
+            import json
+            from app.services.orders import list_guest_orders
+            orders = list_guest_orders(self.db, session_id=self.session_id)
+            if not orders:
+                self.activities.append(
+                    ToolActivityItem(
+                        activity="check_order_status()",
+                        status="completed",
+                        details="No orders found for current session",
+                    )
+                )
+                self.latest_order_info = {"has_orders": False, "orders": []}
+                return self.latest_order_info
+
+            latest = orders[0]
+
+            # Parse line items snapshot for rich summary
+            items_summary = ""
+            items_count = 0
+            try:
+                snapshot = json.loads(latest.items_snapshot_json or "[]")
+                items_count = sum(item.get("quantity", 1) for item in snapshot)
+                names = [item.get("name", "Item") for item in snapshot]
+                items_summary = ", ".join(names[:2]) + ("..." if len(names) > 2 else "")
+            except Exception:
+                pass
+
+            self.activities.append(
+                ToolActivityItem(
+                    activity=f"check_order_status(order_id='{latest.id}')",
+                    status="completed",
+                    details=f"Status: {latest.status}",
+                )
+            )
+            order_data = {
+                "has_orders": True,
+                "order_id": latest.id,
+                "status": latest.status,
+                "carrier": latest.carrier,
+                "tracking_number": latest.tracking_number,
+                "amount_paise": latest.amount_paise,
+                "customer_name": latest.customer_name,
+                "created_at": latest.created_at.isoformat() if latest.created_at else None,
+                "items_count": items_count,
+                "items_summary": items_summary,
+            }
+            self.latest_order_info = order_data
+            return order_data
+        except Exception as e:
+            self.activities.append(
+                ToolActivityItem(
+                    activity="check_order_status()",
+                    status="failed",
+                    details=str(e),
+                )
+            )
+            self.latest_order_info = {"has_orders": False, "error": str(e)}
+            return self.latest_order_info

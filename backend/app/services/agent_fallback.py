@@ -5,6 +5,7 @@ from app.schemas.agent import (
     AgentChatResponse,
     ChatMessageTurn,
     ProductRecommendationItem,
+    AgentOrderStatusSnapshot,
 )
 from app.schemas.cart import CartResponse
 from app.schemas.product import ProductResponse
@@ -50,12 +51,55 @@ def run_deterministic_fallback(
                 last_assistant_msg = turn.content.lower()
                 break
 
+    # Intent -1: Order tracking / status query ("Where is my order?", "tell me my order status")
+    order_tracking_triggers = [
+        "where is my order", "where's my order", "where is my package", "where's my package",
+        "track my order", "track order", "track my package", "track package",
+        "what's the status of my order", "what is the status of my order", "order status",
+        "status of my order", "package status", "tell me my order status", "tell me the status of my order",
+        "show my order", "my order status", "check my order", "order tracking", "order update",
+        "what happened to my order", "check order status"
+    ]
+    is_order_tracking = any(t in lower for t in order_tracking_triggers) or (
+        ("order" in lower or "package" in lower) and any(w in lower for w in ["status", "track", "where", "tell me", "check"])
+    )
+
+    if is_order_tracking:
+        order_info = executor.get_order_status()
+        if not order_info.get("has_orders"):
+            response_msg = "I couldn't find an order in this session. You can check Track Orders to view your orders."
+        else:
+            order_id = order_info.get("order_id")
+            status = order_info.get("status")
+            carrier = order_info.get("carrier")
+            tracking_number = order_info.get("tracking_number")
+            amount_paise = order_info.get("amount_paise", 0)
+            amount_str = f"₹{(amount_paise / 100):,.2f}" if amount_paise else ""
+
+            carrier_str = f" with {carrier}" if carrier else " with RunCraft Express"
+            tracking_str = f" Tracking number: {tracking_number}." if tracking_number else ""
+
+            if status == "SHIPPED":
+                response_msg = f"Your order #{order_id} ({amount_str}) is currently shipped{carrier_str}.{tracking_str}"
+            elif status == "DELIVERED":
+                response_msg = f"Your order #{order_id} ({amount_str}) has been delivered!{tracking_str}"
+            elif status == "PROCESSING":
+                response_msg = f"Your order #{order_id} ({amount_str}) is currently being packed and processed at our warehouse. We will update you as soon as it ships."
+            elif status == "CONFIRMED":
+                response_msg = f"Your order #{order_id} ({amount_str}) is confirmed and waiting to be processed at our warehouse."
+            elif status == "PENDING_PAYMENT":
+                response_msg = f"Your order #{order_id} was created and is currently awaiting payment confirmation. You can view or complete payment on the checkout page."
+            elif status == "CANCELLED":
+                response_msg = f"Your order #{order_id} was cancelled."
+            else:
+                response_msg = f"Your order #{order_id} status is currently: {status}."
+        approval_required = False
+
     # Intent 0: Direct checkout, payment, or order review request
-    checkout_triggers = [
+    elif any(t in lower for t in [
         "checkout", "check out", "place order", "pay", "payment",
         "proceed to checkout", "buy now", "confirm order", "approve and pay", "purchase"
-    ]
-    if any(t in lower for t in checkout_triggers):
+    ]):
         current_cart = get_cart_by_id(executor.db, executor.cart_id)
         if current_cart and current_cart.items:
             quote = executor.get_final_quote()
@@ -289,6 +333,22 @@ def run_deterministic_fallback(
         except Exception:
             pass
 
+    order_status_obj = None
+    if getattr(executor, "latest_order_info", None) and executor.latest_order_info.get("has_orders"):
+        info = executor.latest_order_info
+        order_status_obj = AgentOrderStatusSnapshot(
+            order_id=info["order_id"],
+            status=info["status"],
+            amount_paise=info.get("amount_paise", 0),
+            currency="INR",
+            carrier=info.get("carrier"),
+            tracking_number=info.get("tracking_number"),
+            customer_name=info.get("customer_name"),
+            created_at=info.get("created_at"),
+            items_count=info.get("items_count", 0),
+            items_summary=info.get("items_summary"),
+        )
+
     return AgentChatResponse(
         message=response_msg,
         tool_activity=executor.activities,
@@ -296,4 +356,5 @@ def run_deterministic_fallback(
         cart=cart_resp,
         quote=quote_resp,
         approval_required=approval_required,
+        order_status=order_status_obj,
     )

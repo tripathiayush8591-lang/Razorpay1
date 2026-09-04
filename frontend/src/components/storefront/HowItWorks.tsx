@@ -6,23 +6,23 @@ export const HowItWorks: React.FC = () => {
     {
       step: "01",
       icon: <MessageSquare className="w-5 h-5 text-accent" />,
-      title: "State Your Goal & Constraints",
+      title: "Tell Us What You Need",
       description:
-        "Prompt the agent naturally — 'Build a marathon kit under ₹8,000'. The agent reasons over your request without hallucinating fake items.",
+        "Tell Pace your running goals or target budget — like 'Build a 10K running kit under ₹8,000'. We find gear that matches your exact training routine.",
     },
     {
       step: "02",
       icon: <Calculator className="w-5 h-5 text-accent" />,
-      title: "Authoritative Quote Generation",
+      title: "Verified Price & Stock",
       description:
-        "The commerce layer validates real SQLite warehouse stock, applies merchant discount policies, and produces a mathematically binding quote.",
+        "Every recommendation checks real-time warehouse inventory and active promotions, giving you an exact, verified total with zero hidden costs.",
     },
     {
       step: "03",
       icon: <ShieldCheck className="w-5 h-5 text-accent" />,
-      title: "Explicit Consent & Payment",
+      title: "You're Always in Control",
       description:
-        "No money or checkout order is generated without your explicit one-click approval. Completed instantly via Razorpay Test Mode.",
+        "Your order is never placed without your explicit approval. Review your complete item breakdown and pay securely via Razorpay.",
     },
   ];
 
@@ -30,13 +30,13 @@ export const HowItWorks: React.FC = () => {
     <section className="py-14 border-t border-border">
       <div className="text-center max-w-2xl mx-auto mb-12">
         <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-          Architecture in Motion
+          How It Works
         </span>
         <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-1">
-          How Agentic Shopping Actually Works
+          Simple, Transparent & Fast Shopping
         </h2>
         <p className="text-xs sm:text-sm text-text-secondary mt-2">
-          Agents decide what to do. The commerce layer decides what is true and what is allowed.
+          Personalized running recommendations backed by real-time inventory and customer-approved checkout.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export const HowItWorks: React.FC = () => {
             </div>
 
             <div className="mt-6 pt-4 border-t border-border text-[11px] font-medium text-text-muted">
-              FastAPI Commerce Service Verified
+              Live Warehouse Verified
             </div>
           </div>
         ))}

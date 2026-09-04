@@ -39,6 +39,59 @@ export class ApiErrorClass extends Error {
 }
 
 /**
+ * Transforms raw HTTP or backend errors into customer-friendly, reassuring messages
+ * while preserving full technical details in developer console logs.
+ */
+export function toCustomerFriendlyError(error: any): string {
+  if (typeof window !== "undefined") {
+    console.error("[RunCraft Diagnostic Log]:", error);
+  }
+
+  const rawMessage = error?.message || (typeof error === "string" ? error : "");
+  const lower = rawMessage.toLowerCase();
+
+  if (
+    lower.includes("409") ||
+    lower.includes("stale") ||
+    lower.includes("mismatch") ||
+    lower.includes("price changed")
+  ) {
+    return "Your cart price changed. Please review the updated total before continuing.";
+  }
+
+  if (
+    lower.includes("403") ||
+    lower.includes("forbidden") ||
+    lower.includes("permission") ||
+    lower.includes("does not belong")
+  ) {
+    return "We couldn't access that order.";
+  }
+
+  if (lower.includes("404") || lower.includes("not found")) {
+    return "The requested product or order was not found.";
+  }
+
+  if (lower.includes("out of stock") || lower.includes("insufficient")) {
+    return "One or more items in your cart are currently out of stock.";
+  }
+
+  if (lower.includes("network") || lower.includes("failed to fetch") || lower.includes("load failed")) {
+    return "Something went wrong. Please check your connection and try again.";
+  }
+
+  if (lower.includes("500") || lower.includes("internal server") || lower.includes("http 5")) {
+    return "Something went wrong. Please try again.";
+  }
+
+  if (rawMessage && !rawMessage.startsWith("HTTP ") && !rawMessage.includes("JSON") && rawMessage.length < 120) {
+    return rawMessage;
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
+/**
  * Resolves static relative image URLs (/static/uploads/...) to absolute URLs if API_BASE_URL is set,
  * or returns them as-is if proxied or already an absolute URL.
  */
